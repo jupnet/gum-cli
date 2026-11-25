@@ -1,0 +1,4997 @@
+{
+  "components": {
+    "schemas": {
+      "Activity": {
+        "description": "A deposit, swap or withdrawal. Returned by history, by the status endpoints and as every message of the live streams. Fields that don't apply to a type are omitted; fields not known yet are null.",
+        "properties": {
+          "amount": {
+            "description": "Withdrawals: what arrives at `destination`, after `fee`. Deposits: what was credited to your balance.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "chainId": {
+            "description": "The other chain involved: where a swap's token trades, where a withdrawal goes, where a deposit came from. 900 is Solana.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "completedAt": {
+            "description": "When it finished. Null while pending.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "description": "When the request was made.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "destination": {
+            "description": "Withdrawals: the address on `chainId` that receives the funds.",
+            "type": "string"
+          },
+          "explorerUrl": {
+            "description": "`txHash` on that chain's block explorer, or null without a `txHash`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fee": {
+            "description": "Swaps: GUM's trading fee, in USD, or null until the swap completes: the fee is only charged then, and a swap that fails is refunded in full. Withdrawals: the network fee in the withdrawn token, already taken out of `amount`.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "final": {
+            "description": "True once nothing can change: stop polling or listening. A failed swap stays false until its funds are back and it turns `refunded`.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "The request's account on GUM Network (base58); a swap that settles in one transaction uses its transaction id. Use it with the status endpoints.",
+            "type": "string"
+          },
+          "pay": {
+            "description": "Swaps: what left your balance: USD on a buy, the token on a sell.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "reason": {
+            "description": "Why it failed, when `status` is failed.",
+            "type": "string"
+          },
+          "receive": {
+            "description": "Swaps: what reached your balance. `amount` is null until the swap fills.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "side": {
+            "description": "buy spends USD on `token`; sell turns `token` into USD.",
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "pending → completed, or failed (swaps that fail are refunded automatically and later read `refunded`). Withdrawals can also end `cancelled`.",
+            "enum": [
+              "pending",
+              "completed",
+              "failed",
+              "refunded",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "step": {
+            "description": "Human-readable progress while pending, e.g. \"Executing swap on Solana\".",
+            "type": "string"
+          },
+          "token": {
+            "description": "The token involved, as on its home chain. USD has no address; a USD withdrawal shows the dollar token it pays out.",
+            "properties": {
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "chainId": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "decimals": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "txHash": {
+            "description": "The transaction on `chainId`: the swap, the withdrawal's payout or the deposit. Null until there is one.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "enum": [
+              "deposit",
+              "swap",
+              "withdrawal"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "status",
+          "final"
+        ],
+        "type": "object"
+      },
+      "Balances": {
+        "properties": {
+          "account": {
+            "description": "The GUM account (base58).",
+            "type": "string"
+          },
+          "address": {
+            "description": "Exactly what you passed.",
+            "type": "string"
+          },
+          "perpsUsd": {
+            "description": "GUM Perps balance in USD, or null when it can't be read right now.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tokens": {
+            "description": "Everything you hold besides USD, largest first.",
+            "items": {
+              "$ref": "#/components/schemas/Holding"
+            },
+            "type": "array"
+          },
+          "totalUsd": {
+            "type": "string"
+          },
+          "usd": {
+            "description": "Cash you can spend on buys.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "address",
+          "usd",
+          "tokens",
+          "totalUsd",
+          "perpsUsd"
+        ],
+        "type": "object"
+      },
+      "Chain": {
+        "properties": {
+          "chainId": {
+            "type": "integer"
+          },
+          "dollarToken": {
+            "$ref": "#/components/schemas/DollarToken"
+          },
+          "family": {
+            "enum": [
+              "svm",
+              "evm",
+              "sui"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "usdWithdrawable": {
+            "description": "False on chains with their own dollar token (BSC, Robinhood) and on chains whose withdrawals haven't opened yet.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "DepositAddresses": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "chains": {
+            "items": {
+              "properties": {
+                "chainId": {
+                  "type": "integer"
+                },
+                "depositAddress": {
+                  "description": "Send funds here, on this chain.",
+                  "type": "string"
+                },
+                "dollarToken": {
+                  "$ref": "#/components/schemas/DollarToken"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "status": {
+                  "description": "healthy; degraded (slower than usual); down (don't send now); unknown.",
+                  "enum": [
+                    "healthy",
+                    "degraded",
+                    "down",
+                    "unknown"
+                  ],
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "minimumUsd": {
+            "description": "Smaller deposits wait until the total sent to the address reaches it.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DollarToken": {
+        "description": "The dollar token GUM credits and pays out on a chain.",
+        "properties": {
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decimals": {
+            "type": "integer"
+          },
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DryRun": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "dryRun": {
+            "const": true
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "enum": [
+              "swap",
+              "withdrawal",
+              "perps_deposit",
+              "perps_withdraw",
+              "perps_leverage",
+              "perps_order",
+              "perps_cancel"
+            ],
+            "type": "string"
+          },
+          "valid": {
+            "const": true
+          }
+        },
+        "required": [
+          "account",
+          "dryRun",
+          "type",
+          "valid"
+        ],
+        "type": "object"
+      },
+      "Error": {
+        "properties": {
+          "error": {
+            "properties": {
+              "code": {
+                "description": "Stable machine-readable code. Branch on this, not on the message.",
+                "enum": [
+                  "internal_error",
+                  "invalid_address",
+                  "invalid_request",
+                  "invalid_signature",
+                  "invalid_transaction",
+                  "method_not_allowed",
+                  "not_found",
+                  "quote_expired",
+                  "quote_failed",
+                  "rate_limited",
+                  "submit_failed",
+                  "token_not_found",
+                  "too_many_streams",
+                  "unsupported_account",
+                  "unsupported_chain",
+                  "upstream_unavailable"
+                ],
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "ExecuteRequest": {
+        "properties": {
+          "dryRun": {
+            "description": "Check the signature without submitting. Nothing is sent or charged.",
+            "type": "boolean"
+          },
+          "signature": {
+            "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+            "type": "string"
+          },
+          "transaction": {
+            "description": "The quote's `transaction`, unchanged.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction",
+          "signature"
+        ],
+        "type": "object"
+      },
+      "Holding": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "chainId": {
+            "type": "integer"
+          },
+          "decimals": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "priceUsd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "valueUsd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "Signer": {
+        "description": "Who signs `message`, and how.",
+        "properties": {
+          "address": {
+            "description": "The GUM account that signs: a Solana wallet's public key, or an EVM wallet's typed address (tag 0x10).",
+            "type": "string"
+          },
+          "signWith": {
+            "description": "solana: Ed25519 over the raw `message` bytes; the API adds it as typed signature 0x00. evm: personal_sign (EIP-191) over the raw `message` bytes; the API recovers your public key and adds typed signature 0x10.",
+            "enum": [
+              "solana",
+              "evm"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Submission": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "eventsUrl": {
+            "description": "Live status (SSE).",
+            "type": "string"
+          },
+          "explorerUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "final": {
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Track it at statusUrl or eventsUrl.",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "completed"
+            ],
+            "type": "string"
+          },
+          "statusUrl": {
+            "type": "string"
+          },
+          "transactionId": {
+            "description": "The GUM Network transaction that recorded the request.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "enum": [
+              "swap",
+              "withdrawal"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SwapQuote": {
+        "properties": {
+          "chainId": {
+            "type": "integer"
+          },
+          "expiresAt": {
+            "description": "Submit before this (about 25 seconds).",
+            "format": "date-time",
+            "type": "string"
+          },
+          "fee": {
+            "description": "GUM's fee, in USD.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "message": {
+            "description": "The Solana legacy message inside `transaction`, base64. Sign these bytes with your wallet, as `signer.signWith` says.",
+            "type": "string"
+          },
+          "pay": {
+            "description": "What leaves your balance: USD on buys, the token on sells.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "priceImpact": {
+            "description": "Decimal fraction (\"0.0024\" = 0.24%), when known.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceUsd": {
+            "description": "Effective USD price per token at the expected fill.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "receive": {
+            "properties": {
+              "amount": {
+                "description": "Expected.",
+                "type": "string"
+              },
+              "minimum": {
+                "description": "Guaranteed on-chain; the trade fails rather than fill below it.",
+                "type": "string"
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "type": "string"
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Signer"
+          },
+          "slippageBps": {
+            "type": "integer"
+          },
+          "token": {
+            "$ref": "#/components/schemas/Token"
+          },
+          "transaction": {
+            "description": "The GUM Network transaction in its wire format, base64: one typed signature record per signer (GUM's fee payer has signed, your slot is empty), then `message`. Send it back unchanged with your signature; the API adds your typed signature and submits it.",
+            "type": "string"
+          },
+          "usdValue": {
+            "description": "USD this trade moves: what you spend on a buy, what you receive on a sell. Null when it can't be priced; a client with a USD limit then refuses to sign.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "SwapQuoteRequest": {
+        "properties": {
+          "address": {
+            "description": "Your Solana or EVM wallet address.",
+            "type": "string"
+          },
+          "amount": {
+            "description": "Decimal string. Buy: USD to spend. Sell: tokens to sell.",
+            "type": "string"
+          },
+          "chainId": {
+            "description": "The token's chain (GET /chains).",
+            "type": "integer"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "type": "string"
+          },
+          "slippageBps": {
+            "description": "Optional. Defaults to 100 (1%), 200 on Ethereum and Robinhood. Max 1000.",
+            "maximum": 1000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "token": {
+            "description": "The token's address on chainId (from GET /tokens).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "side",
+          "chainId",
+          "token",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "Token": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "chainId": {
+            "type": "integer"
+          },
+          "decimals": {
+            "type": "integer"
+          },
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "priceUsd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "riskLevel": {
+            "description": "low, medium, high. Many tokens share a symbol: pick by address.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "token",
+              "stock"
+            ],
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsRiskTier": {
+        "properties": {
+          "initialMarginRatioBps": {
+            "type": "integer"
+          },
+          "maintenanceAmount": {
+            "type": "string"
+          },
+          "maintenanceMarginRatioBps": {
+            "type": "integer"
+          },
+          "maxLeverage": {
+            "type": "integer"
+          },
+          "notionalCapUsd": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsMarket": {
+        "properties": {
+          "annualizedFundingRate": {
+            "description": "Annualized funding rate as a decimal fraction (e.g. '0.12' = 12% APR).",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bestAsk": {
+            "type": "string"
+          },
+          "bestBid": {
+            "type": "string"
+          },
+          "fundingRateBps1h": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hourlyFundingRate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "indexPrice": {
+            "type": "string"
+          },
+          "lastTradePrice": {
+            "type": "string"
+          },
+          "liquidationFeeBps": {
+            "type": "number"
+          },
+          "makerFeeBps": {
+            "type": "number"
+          },
+          "markPrice": {
+            "type": "string"
+          },
+          "maxAccountPositionNotionalUsd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maxLeverage": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "midPrice": {
+            "type": "string"
+          },
+          "nextFundingAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "openInterestBase": {
+            "type": "string"
+          },
+          "openInterestUsd": {
+            "type": "string"
+          },
+          "predictedFundingRate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceChangePercent24h": {
+            "type": "string"
+          },
+          "pubkey": {
+            "type": "string"
+          },
+          "riskTiers": {
+            "items": {
+              "$ref": "#/components/schemas/PerpsRiskTier"
+            },
+            "type": "array"
+          },
+          "stepSize": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "takerFeeBps": {
+            "type": "number"
+          },
+          "tickSize": {
+            "type": "string"
+          },
+          "volume24hUsd": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsOrderbook": {
+        "properties": {
+          "asks": {
+            "description": "[price, size] tuples, best ask first.",
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "bids": {
+            "description": "[price, size] tuples, best bid first.",
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsFundingHistory": {
+        "properties": {
+          "averageAnnualizedRate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "entries": {
+            "items": {
+              "properties": {
+                "annualizedRate": {
+                  "type": "string"
+                },
+                "rateBps1h": {
+                  "type": "string"
+                },
+                "timestamp": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsPosition": {
+        "properties": {
+          "avgEntryPrice": {
+            "type": "string"
+          },
+          "fundingAccrued": {
+            "type": "string"
+          },
+          "isolated": {
+            "type": "boolean"
+          },
+          "liquidationPrice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "margin": {
+            "type": "string"
+          },
+          "markPrice": {
+            "type": "string"
+          },
+          "selectedLeverage": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "side": {
+            "enum": [
+              "long",
+              "short"
+            ],
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "unrealizedPnl": {
+            "type": "string"
+          },
+          "unrealizedPnlPercent": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsOpenOrder": {
+        "properties": {
+          "clientOrderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "initialSize": {
+            "type": "string"
+          },
+          "isolated": {
+            "type": "boolean"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "reduceOnly": {
+            "type": "boolean"
+          },
+          "remainingSize": {
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsLeverageSetting": {
+        "properties": {
+          "leverage": {
+            "type": "integer"
+          },
+          "marginMode": {
+            "enum": [
+              "cross",
+              "isolated"
+            ],
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "leverage",
+          "marginMode",
+          "symbol"
+        ],
+        "type": "object"
+      },
+      "PerpsSubaccount": {
+        "properties": {
+          "accountValueUsd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "availableToTradeUsd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "conditionalOrdersCount": {
+            "type": "integer"
+          },
+          "freeBalanceUsd": {
+            "type": "string"
+          },
+          "isolated": {
+            "type": "boolean"
+          },
+          "leverages": {
+            "description": "Configured per-market leverage preferences for this sub-account.",
+            "items": {
+              "$ref": "#/components/schemas/PerpsLeverageSetting"
+            },
+            "type": "array"
+          },
+          "maintenanceMarginUsd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "market": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "openOrders": {
+            "items": {
+              "$ref": "#/components/schemas/PerpsOpenOrder"
+            },
+            "type": "array"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/PerpsPosition"
+            },
+            "type": "array"
+          },
+          "pubkey": {
+            "type": "string"
+          },
+          "subaccountId": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsAccount": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "subaccounts": {
+            "items": {
+              "$ref": "#/components/schemas/PerpsSubaccount"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsTransferQuoteRequest": {
+        "properties": {
+          "address": {
+            "description": "Your Solana or EVM wallet address.",
+            "type": "string"
+          },
+          "amount": {
+            "description": "USD amount as a decimal string.",
+            "type": "string"
+          },
+          "subaccountId": {
+            "description": "Perps sub-account index (0–4, default 0).",
+            "maximum": 4,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "address",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "PerpsTransferQuote": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "amount": {
+            "description": "USD moved between spot and Perps.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "direction": {
+            "enum": [
+              "deposit",
+              "withdraw"
+            ],
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "message": {
+            "description": "The Solana legacy message inside `transaction`, base64. Sign these bytes with your wallet, as `signer.signWith` says.",
+            "type": "string"
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Signer"
+          },
+          "subaccountId": {
+            "type": "integer"
+          },
+          "tradingAccount": {
+            "type": "string"
+          },
+          "transaction": {
+            "description": "The GUM Network transaction in its wire format, base64: one typed signature record per signer (GUM's fee payer has signed, your slot is empty), then `message`. Send it back unchanged with your signature; the API adds your typed signature and submits it.",
+            "type": "string"
+          },
+          "usdValue": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsLeverageQuoteRequest": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "leverage": {
+            "description": "Target leverage multiplier (1–100).",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "marginMode": {
+            "description": "Defaults to \"cross\".",
+            "enum": [
+              "cross",
+              "isolated"
+            ],
+            "type": "string"
+          },
+          "subaccountId": {
+            "maximum": 4,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "symbol": {
+            "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "symbol",
+          "leverage"
+        ],
+        "type": "object"
+      },
+      "PerpsLeverageQuote": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "leverage": {
+            "type": "integer"
+          },
+          "marginMode": {
+            "enum": [
+              "cross",
+              "isolated"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "description": "The Solana legacy message inside `transaction`, base64. Sign these bytes with your wallet, as `signer.signWith` says.",
+            "type": "string"
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Signer"
+          },
+          "subaccountId": {
+            "type": "integer"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "transaction": {
+            "description": "The GUM Network transaction in its wire format, base64: one typed signature record per signer (GUM's fee payer has signed, your slot is empty), then `message`. Send it back unchanged with your signature; the API adds your typed signature and submits it.",
+            "type": "string"
+          },
+          "usdValue": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsOrderQuoteRequest": {
+        "properties": {
+          "address": {
+            "description": "Your Solana or EVM wallet address.",
+            "type": "string"
+          },
+          "clientOrderId": {
+            "description": "Optional unsigned 64-bit integer client order id.",
+            "type": "string"
+          },
+          "marginMode": {
+            "description": "Defaults to \"cross\".",
+            "enum": [
+              "cross",
+              "isolated"
+            ],
+            "type": "string"
+          },
+          "orderType": {
+            "description": "Defaults to \"market\".",
+            "enum": [
+              "market",
+              "limit",
+              "postOnly"
+            ],
+            "type": "string"
+          },
+          "price": {
+            "description": "Limit price as a decimal string. Required for limit and postOnly orders.",
+            "type": "string"
+          },
+          "reduceOnly": {
+            "type": "boolean"
+          },
+          "side": {
+            "description": "buy opens/adds long; sell opens/adds short.",
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "type": "string"
+          },
+          "size": {
+            "description": "Order size as a decimal string: base units by default, or USD when sizeCurrency is \"USD\".",
+            "type": "string"
+          },
+          "sizeCurrency": {
+            "description": "Defaults to \"base\".",
+            "enum": [
+              "base",
+              "USD"
+            ],
+            "type": "string"
+          },
+          "slippageBps": {
+            "description": "Market order slippage cap in bps (default 100 = 1%, max 400 = 4%).",
+            "maximum": 400,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "subaccountId": {
+            "maximum": 4,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "symbol": {
+            "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+            "type": "string"
+          },
+          "timeInForce": {
+            "enum": [
+              "GTC",
+              "IOC",
+              "FOK"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "symbol",
+          "side",
+          "size"
+        ],
+        "type": "object"
+      },
+      "PerpsOrderQuote": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "clientOrderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "marginMode": {
+            "enum": [
+              "cross",
+              "isolated"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "description": "Base64 GUM Perps action message bytes to sign with your wallet.",
+            "type": "string"
+          },
+          "orderType": {
+            "enum": [
+              "market",
+              "limit",
+              "postOnly"
+            ],
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "reduceOnly": {
+            "type": "boolean"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "type": "string"
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Signer"
+          },
+          "subaccountId": {
+            "type": "integer"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "timeInForce": {
+            "type": "string"
+          },
+          "tradingAccount": {
+            "type": "string"
+          },
+          "transaction": {
+            "description": "Base64 prepared order payload. Send unchanged with your signature to POST /v1/perps/orders.",
+            "type": "string"
+          },
+          "usdValue": {
+            "description": "Estimated notional order value in USD.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsCancelQuoteRequest": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "cancelAll": {
+            "description": "Set true to cancel every open order in this market.",
+            "type": "boolean"
+          },
+          "clientOrderId": {
+            "type": "string"
+          },
+          "marginMode": {
+            "enum": [
+              "cross",
+              "isolated"
+            ],
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "subaccountId": {
+            "maximum": 4,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "symbol"
+        ],
+        "type": "object"
+      },
+      "PerpsCancelQuote": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "cancelAll": {
+            "type": "boolean"
+          },
+          "clientOrderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "marginMode": {
+            "enum": [
+              "cross",
+              "isolated"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "description": "Base64 GUM Perps action message bytes to sign with your wallet.",
+            "type": "string"
+          },
+          "orderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Signer"
+          },
+          "subaccountId": {
+            "type": "integer"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "tradingAccount": {
+            "type": "string"
+          },
+          "transaction": {
+            "description": "Base64 prepared cancel payload. Send unchanged with your signature to POST /v1/perps/orders/cancel.",
+            "type": "string"
+          },
+          "usdValue": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PerpsSubmission": {
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "clientOrderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "explorerUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "final": {
+            "description": "true for on-chain margin and leverage transactions; false for order/cancel matching-engine acknowledgements (check GET /v1/perps/accounts/{address} for live state).",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "completed"
+            ],
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "transactionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "enum": [
+              "perps_deposit",
+              "perps_withdraw",
+              "perps_leverage",
+              "perps_order",
+              "perps_cancel"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "final",
+          "status",
+          "type"
+        ],
+        "type": "object"
+      },
+      "WithdrawalQuote": {
+        "properties": {
+          "amount": {
+            "description": "What leaves your balance.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "chainId": {
+            "type": "integer"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fee": {
+            "description": "Network fee in USD, deducted from the amount on delivery.",
+            "properties": {
+              "amount": {
+                "description": "Decimal string in whole units (not atomic).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          "message": {
+            "description": "The Solana legacy message inside `transaction`, base64. Sign these bytes with your wallet, as `signer.signWith` says.",
+            "type": "string"
+          },
+          "signer": {
+            "$ref": "#/components/schemas/Signer"
+          },
+          "token": {
+            "properties": {
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "chainId": {
+                "type": "integer"
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "transaction": {
+            "description": "The GUM Network transaction in its wire format, base64: one typed signature record per signer (GUM's fee payer has signed, your slot is empty), then `message`. Send it back unchanged with your signature; the API adds your typed signature and submits it.",
+            "type": "string"
+          },
+          "usdValue": {
+            "description": "USD this withdrawal moves. The amount when withdrawing USD; a token amount times its price otherwise. Null when the token has no price.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "WithdrawalQuoteRequest": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "amount": {
+            "description": "Decimal string.",
+            "type": "string"
+          },
+          "chainId": {
+            "description": "Destination chain.",
+            "type": "integer"
+          },
+          "destination": {
+            "description": "Address on chainId that receives the funds.",
+            "type": "string"
+          },
+          "token": {
+            "description": "\"USD\" to withdraw cash as the chain's dollar token, or the address of a token you hold on chainId.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "token",
+          "chainId",
+          "amount",
+          "destination"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Trade on GUM with a Solana or EVM wallet. Your wallet is your account: there is nothing to sign up for and no API key.\n\nEvery write is two calls: get a quote, sign its `message` with your wallet, then submit `{ transaction, signature }`. Track the returned `id` with the status endpoint or its live stream.\n\n`transaction` is in GUM's wire format: typed signature records, then the Solana legacy message that `message` holds. You never build a record: send your wallet's plain signature and the API adds it as a typed signature.\n\nAmounts are decimal strings in whole units (\"25\" is $25; \"0.5\" is half a token). USD is GUM's cash balance.\n\nPer IP, per minute:\n- 120 all requests\n- 10 deposit-address lookups\n- 30 quotes\n- 20 submitted swaps and withdrawals\n- 10 open live streams\n\nDocs: https://docs.gum.ag/trading-api/overview",
+    "title": "GUM Trading API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/balances/{address}": {
+      "get": {
+        "operationId": "getBalances",
+        "parameters": [
+          {
+            "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+            "example": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Balances"
+                }
+              }
+            },
+            "description": "Balances",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Get cash (USD) and token balances",
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/chains": {
+      "get": {
+        "operationId": "listChains",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "chains": {
+                      "items": {
+                        "$ref": "#/components/schemas/Chain"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Chains"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "List supported chains",
+        "tags": [
+          "Market"
+        ]
+      }
+    },
+    "/deposit-addresses/{address}": {
+      "get": {
+        "description": "Your own deposit address on every supported chain. Send any token worth more than `minimumUsd`; it is credited to your GUM balance, usually within seconds of confirmation. Rate limited more tightly: the first call creates the addresses.",
+        "operationId": "getDepositAddresses",
+        "parameters": [
+          {
+            "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+            "example": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositAddresses"
+                }
+              }
+            },
+            "description": "Deposit addresses"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Get your deposit addresses",
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/deposits/{address}/events": {
+      "get": {
+        "description": "Live deposits for an account (server-sent events). Each message is one JSON object: `{ type: \"deposit\", status, final, step, chainId, amount, txHash, explorerUrl, gumTransactionId, at }`. The first message is `{ type: \"subscribed\" }`. Live only: open it before sending funds, or read GET /history/{address}?type=deposit afterwards.",
+        "operationId": "streamDeposits",
+        "parameters": [
+          {
+            "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+            "example": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "description": "One JSON object per `data:` line.",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Event stream"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Stream deposits as they arrive",
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/history/{address}": {
+      "get": {
+        "operationId": "getHistory",
+        "parameters": [
+          {
+            "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+            "example": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "enum": [
+                "deposit",
+                "swap",
+                "withdrawal"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "`nextCursor` from the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only one market: the token's chain (GET /chains). Pass it with `token`.",
+            "in": "query",
+            "name": "chainId",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Only one market: the token's address on chainId (from GET /tokens). Pass it with `chainId`.",
+            "in": "query",
+            "name": "token",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only one market, by its GUM mint. Use instead of `chainId` and `token`.",
+            "in": "query",
+            "name": "mint",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "account": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "items": {
+                      "items": {
+                        "$ref": "#/components/schemas/Activity"
+                      },
+                      "type": "array"
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Newest first"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "List deposits, swaps and withdrawals",
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/perps/accounts/{address}": {
+      "get": {
+        "description": "List a wallet's GUM Perps sub-accounts, balances, configured market leverage settings, open positions and resting orders.",
+        "operationId": "getPerpsAccount",
+        "parameters": [
+          {
+            "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+            "example": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter to one sub-account (0–4).",
+            "in": "query",
+            "name": "subaccountId",
+            "schema": {
+              "maximum": 4,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsAccount"
+                }
+              }
+            },
+            "description": "Perps account state"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Get Perps sub-accounts, configured leverage, positions and open orders",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/deposit": {
+      "post": {
+        "operationId": "executePerpsDeposit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PerpsSubmission"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DryRun"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Deposited or dry-run verified"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "invalid_signature"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Submit a signed Perps deposit",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/deposit/quote": {
+      "post": {
+        "description": "Prepare a free USD transfer from your GUM spot balance into a GUM Perps sub-account.",
+        "operationId": "quotePerpsDeposit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "address": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+                "amount": "100",
+                "subaccountId": 0
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PerpsTransferQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsTransferQuote"
+                }
+              }
+            },
+            "description": "Deposit transaction to sign"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Quote a Perps USD deposit",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/leverage": {
+      "post": {
+        "operationId": "executePerpsLeverage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PerpsSubmission"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DryRun"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Leverage updated or dry-run verified"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "invalid_signature"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Submit a signed Perps leverage update",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/leverage/quote": {
+      "post": {
+        "operationId": "quotePerpsLeverage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "address": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+                "leverage": 5,
+                "marginMode": "cross",
+                "subaccountId": 0,
+                "symbol": "SOL"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PerpsLeverageQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsLeverageQuote"
+                }
+              }
+            },
+            "description": "Leverage transaction to sign"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Quote a Perps leverage update",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/markets": {
+      "get": {
+        "description": "All active GUM Perps markets with live mark/index prices, hourly and annualized funding rates, open interest, maker/taker fees and margin tiers.",
+        "operationId": "listPerpsMarkets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "markets": {
+                      "items": {
+                        "$ref": "#/components/schemas/PerpsMarket"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Active GUM Perps markets"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "List GUM Perps markets and funding rates",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/markets/{symbol}/funding-history": {
+      "get": {
+        "description": "Historical hourly funding rates for a GUM Perps market, plus the period average annualized rate.",
+        "operationId": "getPerpsFundingHistory",
+        "parameters": [
+          {
+            "description": "Perps market symbol, e.g. SOL, BTC, ETH, SPCX, HYPE.",
+            "example": "SOL",
+            "in": "path",
+            "name": "symbol",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hourly entries to return (1–720, default 168 = 7 days).",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 168,
+              "maximum": 720,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsFundingHistory"
+                }
+              }
+            },
+            "description": "Hourly funding history"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Get hourly Perps funding history",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/markets/{symbol}/orderbook": {
+      "get": {
+        "description": "Current L2 orderbook bids and asks for a market.",
+        "operationId": "getPerpsOrderbook",
+        "parameters": [
+          {
+            "description": "Perps market symbol, e.g. SOL, BTC, ETH, SPCX, HYPE.",
+            "example": "SOL",
+            "in": "path",
+            "name": "symbol",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Levels per side (1–50, default 20).",
+            "in": "query",
+            "name": "depth",
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsOrderbook"
+                }
+              }
+            },
+            "description": "L2 orderbook snapshot"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Get a Perps market orderbook",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/orders": {
+      "post": {
+        "operationId": "executePerpsOrder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PerpsSubmission"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DryRun"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Order submitted or dry-run verified"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "invalid_signature"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Submit a signed Perps order",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/orders/cancel": {
+      "post": {
+        "operationId": "executePerpsCancel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PerpsSubmission"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DryRun"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Cancelled or dry-run verified"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "invalid_signature"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Submit a signed Perps cancellation",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/orders/cancel/quote": {
+      "post": {
+        "description": "Prepare a cancellation for a single order (by orderId or clientOrderId) or every open order in a market (cancelAll: true).",
+        "operationId": "quotePerpsCancel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "address": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+                "cancelAll": true,
+                "subaccountId": 0,
+                "symbol": "SOL"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PerpsCancelQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsCancelQuote"
+                }
+              }
+            },
+            "description": "Cancellation action to sign"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Quote a Perps order cancellation",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/orders/quote": {
+      "post": {
+        "description": "Prepare a market, limit or post-only GUM Perps order. Sign `message` with your wallet and submit `{ transaction, signature }` to POST /v1/perps/orders.",
+        "operationId": "quotePerpsOrder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "address": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+                "orderType": "limit",
+                "price": "150",
+                "side": "buy",
+                "size": "1",
+                "symbol": "SOL"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PerpsOrderQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsOrderQuote"
+                }
+              }
+            },
+            "description": "Perps order action to sign"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Quote a Perps order",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/withdraw": {
+      "post": {
+        "operationId": "executePerpsWithdraw",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PerpsSubmission"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DryRun"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Withdrawn or dry-run verified"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "invalid_signature"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Submit a signed Perps withdrawal",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/perps/withdraw/quote": {
+      "post": {
+        "description": "Prepare a free USD transfer from a GUM Perps sub-account back to your GUM spot balance.",
+        "operationId": "quotePerpsWithdraw",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "address": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+                "amount": "50",
+                "subaccountId": 0
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PerpsTransferQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerpsTransferQuote"
+                }
+              }
+            },
+            "description": "Withdrawal transaction to sign"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Quote a Perps USD withdrawal",
+        "tags": [
+          "Perps"
+        ]
+      }
+    },
+    "/swap": {
+      "post": {
+        "description": "Submit a signed quote. Returns 202 with `status: pending`; track `id` until `final` is true. Swaps that settle inside the transaction (selling BSC USDT or Robinhood USDG) complete as soon as GUM Network confirms them.",
+        "operationId": "executeSwap",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DryRun"
+                }
+              }
+            },
+            "description": "Dry run: the signature is valid; nothing was submitted"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Submission"
+                }
+              }
+            },
+            "description": "Submitted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "invalid_signature: the signature isn't the account's signature of `message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Submit a signed buy or sell",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/swap/quote": {
+      "post": {
+        "description": "Quote a buy (spend `amount` USD) or a sell (sell `amount` tokens). Sign `message` with the wallet in `signer`, then POST /swap before `expiresAt`.",
+        "operationId": "quoteSwap",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "address": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+                "amount": "25",
+                "chainId": 900,
+                "side": "buy",
+                "token": "So11111111111111111111111111111111111111112"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/SwapQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapQuote"
+                }
+              }
+            },
+            "description": "Quote"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "token_not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Quote a buy or sell",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/swap/{id}": {
+      "get": {
+        "operationId": "getSwap",
+        "parameters": [
+          {
+            "description": "The `id` returned when you submitted.",
+            "example": "8ZXq4hjocxPgbMtTLiKyiWRQWtoCLhG7M6Kw7fRD9SPK",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            },
+            "description": "Status"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Get a swap's status",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/swap/{id}/events": {
+      "get": {
+        "description": "Server-sent events. Every message is the full Activity object; the first is the current status, and the stream closes after the first message with `final: true`.",
+        "operationId": "streamSwap",
+        "parameters": [
+          {
+            "description": "The `id` returned when you submitted.",
+            "example": "8ZXq4hjocxPgbMtTLiKyiWRQWtoCLhG7M6Kw7fRD9SPK",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "description": "One Activity JSON object per `data:` line.",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Event stream"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Stream a swap's status",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/tokens": {
+      "get": {
+        "description": "Tokens and tokenized stocks you can trade right now, matched on symbol, name or address. Several tokens can share a symbol: pick by `address`, and prefer `verified: true`.",
+        "operationId": "searchTokens",
+        "parameters": [
+          {
+            "description": "Symbol, name or address. Empty returns popular tokens.",
+            "example": "sol",
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only this chain. With an address `query`, that token is looked up on this chain directly; if the lookup can't reach its source, the answer is a 502 to retry.",
+            "in": "query",
+            "name": "chainId",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "tokens": {
+                      "items": {
+                        "$ref": "#/components/schemas/Token"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tokens"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Search tradable tokens",
+        "tags": [
+          "Market"
+        ]
+      }
+    },
+    "/withdraw": {
+      "post": {
+        "operationId": "executeWithdrawal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DryRun"
+                }
+              }
+            },
+            "description": "Dry run"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Submission"
+                }
+              }
+            },
+            "description": "Submitted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "invalid_signature"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Submit a signed withdrawal",
+        "tags": [
+          "Funds"
+        ]
+      }
+    },
+    "/withdraw/quote": {
+      "post": {
+        "operationId": "quoteWithdrawal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "address": "7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U",
+                "amount": "50",
+                "chainId": 8453,
+                "destination": "0x1111111111111111111111111111111111111111",
+                "token": "USD"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawalQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawalQuote"
+                }
+              }
+            },
+            "description": "Withdrawal to sign"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Quote a withdrawal",
+        "tags": [
+          "Funds"
+        ]
+      }
+    },
+    "/withdraw/{id}": {
+      "get": {
+        "operationId": "getWithdrawal",
+        "parameters": [
+          {
+            "description": "The `id` returned when you submitted.",
+            "example": "8ZXq4hjocxPgbMtTLiKyiWRQWtoCLhG7M6Kw7fRD9SPK",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            },
+            "description": "Status"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Get a withdrawal's status",
+        "tags": [
+          "Funds"
+        ]
+      }
+    },
+    "/withdraw/{id}/events": {
+      "get": {
+        "operationId": "streamWithdrawal",
+        "parameters": [
+          {
+            "description": "The `id` returned when you submitted.",
+            "example": "8ZXq4hjocxPgbMtTLiKyiWRQWtoCLhG7M6Kw7fRD9SPK",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "description": "One Activity JSON object per `data:` line.",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Event stream"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid request: see `error.code` and `error.message`."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "details": {
+                      "limit": 120,
+                      "retryAfterSeconds": 12,
+                      "scope": "all",
+                      "windowSeconds": 60
+                    },
+                    "message": "Rate limit reached: 120 all requests per minute per IP. Retry in 12s."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limited. Wait `Retry-After` seconds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window for the tightest budget this request counts against.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An upstream GUM service didn't answer. Retry."
+          }
+        },
+        "summary": "Stream a withdrawal's status",
+        "tags": [
+          "Funds"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.gum.ag/app/v1"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Tokens and chains",
+      "name": "Market"
+    },
+    {
+      "description": "Balances, deposits and history",
+      "name": "Account"
+    },
+    {
+      "description": "Buy and sell",
+      "name": "Trade"
+    },
+    {
+      "description": "Withdrawals",
+      "name": "Funds"
+    },
+    {
+      "description": "GUM Perps orderbooks, funding rates, positions and order execution",
+      "name": "Perps"
+    }
+  ]
+}

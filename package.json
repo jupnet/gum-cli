@@ -1,0 +1,74 @@
+{
+  "name": "@gumag/cli",
+  "version": "0.3.0",
+  "description": "GUM (gum.ag by Jupiter) CLI & MCP server for people and AI agents: spot tokens, tokenized stocks, GUM Perps orderbooks/funding/trading, omnichain deposits & withdrawals across Solana, Base, Arbitrum, Ethereum, HyperEVM, BSC, Sui and Robinhood Chain.",
+  "keywords": [
+    "gum",
+    "gum-ag",
+    "jupiter",
+    "trading",
+    "perps",
+    "perpetuals",
+    "funding-rate",
+    "funding-arbitrage",
+    "hyperliquid",
+    "tokenized-stocks",
+    "cli",
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "openapi",
+    "solana",
+    "evm",
+    "arbitrum",
+    "base",
+    "hyperevm"
+  ],
+  "homepage": "https://docs.gum.ag/trading-api/cli",
+  "bugs": {
+    "url": "https://github.com/jupnet/gum-cli/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jupnet/gum-cli.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "gumag": "./dist/cli.mjs",
+    "gumx": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "generate": "bun codegen/generate.ts",
+    "lint": "biome check --config-path ultracite.biome.jsonc src codegen apis/*/cli.ts package.json tsconfig.json ultracite.biome.jsonc server.json",
+    "lint:fix": "biome check --write --unsafe --config-path ultracite.biome.jsonc src codegen apis/*/cli.ts package.json tsconfig.json ultracite.biome.jsonc server.json",
+    "prepublishOnly": "bun run generate --check && bun run type-check && bun test && bun run build",
+    "sync-openapi": "curl -fsSL https://api.gum.ag/app/v1/openapi.json -o apis/trading-api/openapi.json && bun run generate",
+    "test": "bun test src codegen",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bs58": "6.0.0",
+    "viem": "2.33.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/bun": "1.3.13",
+    "@types/node": "24.19.0",
+    "tsdown": "0.23.0",
+    "typescript": "7.0.2",
+    "ultracite": "7.12.1",
+    "zod": "4.0.17"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "mcpName": "io.github.jupnet/gum-cli"
+}

@@ -1,0 +1,3700 @@
+{
+  "api": "trading-api",
+  "commands": [
+    {
+      "examples": [
+        "gumag balances get",
+        "gumag balances get 7jqXWdiyYkY9XUStYhbGzSgn1VCr9tMF4LNCK52oG76U"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": false,
+          "type": "string",
+          "position": 0,
+          "resolve": "wallet"
+        }
+      ],
+      "keywords": [
+        "holdings portfolio funds positions cash usd how much"
+      ],
+      "mcp": {
+        "description": "USD cash and token holdings. Defaults to this server's wallet.",
+        "name": "get_balances",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getBalances",
+      "path": [
+        "balances",
+        "get"
+      ],
+      "route": "/balances/{address}",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "USD and token balances, yours unless you pass an address.",
+      "usage": "gumag balances get [address]"
+    },
+    {
+      "examples": [],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": false,
+          "type": "string",
+          "resolve": "wallet",
+          "position": 0
+        }
+      ],
+      "keywords": [
+        "holdings portfolio funds cash usd how much"
+      ],
+      "method": "GET",
+      "operationId": "getBalances",
+      "path": [
+        "balance"
+      ],
+      "route": "/balances/{address}",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "USD and token balances, yours unless you pass an address.",
+      "usage": "gumag balance [address]",
+      "shortcutOf": "balances get"
+    },
+    {
+      "examples": [
+        "gumag chains list"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [],
+      "keywords": [
+        "networks supported dollar token usdc usdt"
+      ],
+      "mcp": {
+        "description": "Supported chains, each with its dollar token and whether USD can be withdrawn to it (usdWithdrawable).",
+        "name": "list_chains",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "listChains",
+      "path": [
+        "chains",
+        "list"
+      ],
+      "route": "/chains",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Supported chains and their dollar tokens.",
+      "usage": "gumag chains list"
+    },
+    {
+      "examples": [
+        "gumag deposit-addresses get"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": false,
+          "type": "string",
+          "position": 0,
+          "resolve": "wallet"
+        }
+      ],
+      "keywords": [
+        "fund top up receive deposit address send in"
+      ],
+      "mcp": {
+        "description": "Where to send funds to top up the account: one deposit address per chain, with its dollar token and minimum.",
+        "name": "get_deposit_addresses",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getDepositAddresses",
+      "path": [
+        "deposit-addresses",
+        "get"
+      ],
+      "route": "/deposit-addresses/{address}",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Where to send funds: your deposit address on every chain.",
+      "usage": "gumag deposit-addresses get [address]"
+    },
+    {
+      "examples": [],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": false,
+          "type": "string",
+          "resolve": "wallet",
+          "position": 0
+        }
+      ],
+      "keywords": [
+        "fund top up receive address send in"
+      ],
+      "method": "GET",
+      "operationId": "getDepositAddresses",
+      "path": [
+        "deposit"
+      ],
+      "route": "/deposit-addresses/{address}",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Where to send funds: your deposit address on every chain.",
+      "usage": "gumag deposit [address]",
+      "shortcutOf": "deposit-addresses get"
+    },
+    {
+      "examples": [
+        "gumag deposits watch --timeout 600"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": false,
+          "type": "string",
+          "position": 0,
+          "resolve": "wallet"
+        },
+        {
+          "description": "Stop after this many seconds.",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "live arrive incoming credited wait"
+      ],
+      "method": "GET",
+      "operationId": "streamDeposits",
+      "path": [
+        "deposits",
+        "watch"
+      ],
+      "route": "/deposits/{address}/events",
+      "run": {
+        "kind": "stream"
+      },
+      "summary": "Follow deposits as they arrive: one JSON line per update.",
+      "usage": "gumag deposits watch [address] [--timeout <seconds>]"
+    },
+    {
+      "examples": [
+        "gumag history list --type swap --limit 10",
+        "gumag history list --all --type deposit",
+        "gumag history list --token SOL"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": false,
+          "type": "string",
+          "position": 0,
+          "resolve": "wallet"
+        },
+        {
+          "description": "",
+          "enum": [
+            "deposit",
+            "swap",
+            "withdrawal"
+          ],
+          "field": "type",
+          "flag": "type",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "limit",
+          "flag": "limit",
+          "in": "query",
+          "maximum": 100,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "`nextCursor` from the previous page.",
+          "field": "cursor",
+          "flag": "cursor",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Only one market: the token's chain (GET /chains). Pass it with `token`.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "query",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Only one market: a symbol (SOL) or the token's address. Found on its chain unless you pass --chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "resolve": "token"
+        },
+        {
+          "description": "Only one market, by its GUM mint. Use instead of `chainId` and `token`.",
+          "field": "mint",
+          "flag": "mint",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Follow every page and print one JSON line per item.",
+          "field": "all",
+          "flag": "all",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        }
+      ],
+      "keywords": [
+        "activity transactions past trades deposits withdrawals"
+      ],
+      "mcp": {
+        "description": "Deposits, swaps and withdrawals, newest first. Pass nextCursor back as cursor for the next page.",
+        "name": "get_history",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getHistory",
+      "path": [
+        "history",
+        "list"
+      ],
+      "route": "/history/{address}",
+      "run": {
+        "cursor": "cursor",
+        "items": "items",
+        "kind": "paginate",
+        "next": "nextCursor"
+      },
+      "summary": "Deposits, swaps and withdrawals, newest first.",
+      "usage": "gumag history list [address] [--type <deposit|swap|withdrawal>] [--limit <n>] [--cursor <cursor>] [--chain <id>] [--token <token>] [--mint <mint>] [--all]"
+    },
+    {
+      "examples": [
+        "gumag perps account get",
+        "gumag perps account get --subaccount-id 0"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": false,
+          "type": "string",
+          "position": 0,
+          "resolve": "wallet"
+        },
+        {
+          "description": "Filter to one sub-account (0–4).",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "query",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "perps positions margin equity pnl open orders leverage subaccount"
+      ],
+      "mcp": {
+        "description": "GUM Perps sub-accounts, balances, margin, configured market leverage, open positions and resting orders. Defaults to this server's wallet.",
+        "name": "get_perps_account",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getPerpsAccount",
+      "path": [
+        "perps",
+        "account",
+        "get"
+      ],
+      "route": "/perps/accounts/{address}",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Perps sub-accounts, balances, configured market leverage, open positions and open orders.",
+      "usage": "gumag perps account get [address] [--subaccount-id <subaccount-id>]"
+    },
+    {
+      "examples": [
+        "gumag perps deposit 100 --dry-run --yes",
+        "gumag perps deposit 100 --subaccount-id 0 --yes"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "USD amount as a decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Perps sub-account index (0–4, default 0).",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        }
+      ],
+      "keywords": [
+        "perps margin collateral transfer spot usd into"
+      ],
+      "mcp": {
+        "description": "Move USD from GUM spot balance into a GUM Perps sub-account (free). Set dryRun to check without moving funds. Needs a USD limit.",
+        "name": "perps_deposit",
+        "omit": []
+      },
+      "method": "POST",
+      "operationId": "quotePerpsDeposit",
+      "path": [
+        "perps",
+        "deposit"
+      ],
+      "route": "/perps/deposit/quote",
+      "run": {
+        "expect": {
+          "final": true,
+          "statuses": [
+            "completed"
+          ],
+          "type": "perps_deposit"
+        },
+        "kind": "signed",
+        "recovery": "gumag perps account get",
+        "submit": {
+          "method": "POST",
+          "operationId": "executePerpsDeposit",
+          "route": "/perps/deposit"
+        },
+        "usd": "usdValue"
+      },
+      "summary": "Move USD from GUM spot balance into a Perps sub-account.",
+      "usage": "gumag perps deposit <amount> [--subaccount-id <subaccount-id>] [--dry-run] [--yes] [--max-usd <usd>]"
+    },
+    {
+      "examples": [
+        "gumag perps leverage set SOL 5 --dry-run --yes",
+        "gumag perps leverage set SOL 5 --margin-mode isolated --yes"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Target leverage multiplier (1–100).",
+          "field": "leverage",
+          "flag": "leverage",
+          "in": "body",
+          "maximum": 100,
+          "minimum": 1,
+          "required": true,
+          "type": "integer",
+          "position": 1
+        },
+        {
+          "description": "Defaults to \"cross\".",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        }
+      ],
+      "keywords": [
+        "perps leverage margin multiplier set update"
+      ],
+      "mcp": {
+        "description": "Set target leverage for a GUM Perps market (cross or isolated). Set dryRun to check without submitting.",
+        "name": "perps_set_leverage",
+        "omit": []
+      },
+      "method": "POST",
+      "operationId": "quotePerpsLeverage",
+      "path": [
+        "perps",
+        "leverage",
+        "set"
+      ],
+      "route": "/perps/leverage/quote",
+      "run": {
+        "expect": {
+          "final": true,
+          "statuses": [
+            "completed"
+          ],
+          "type": "perps_leverage"
+        },
+        "kind": "signed",
+        "recovery": "gumag perps account get",
+        "submit": {
+          "method": "POST",
+          "operationId": "executePerpsLeverage",
+          "route": "/perps/leverage"
+        },
+        "usd": "usdValue"
+      },
+      "summary": "Set leverage for a GUM Perps market.",
+      "usage": "gumag perps leverage set <symbol> <leverage> [--margin-mode <cross|isolated>] [--subaccount-id <subaccount-id>] [--dry-run] [--yes] [--max-usd <usd>]"
+    },
+    {
+      "examples": [
+        "gumag perps markets list"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [],
+      "keywords": [
+        "perps perpetuals funding rate markets oi leverage fees stocks pre-ipo"
+      ],
+      "mcp": {
+        "description": "List active GUM Perps markets with mark/index prices, hourly and annualized funding rates, open interest, maker/taker fees and margin tiers.",
+        "name": "list_perps_markets",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "listPerpsMarkets",
+      "path": [
+        "perps",
+        "markets",
+        "list"
+      ],
+      "route": "/perps/markets",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Active GUM Perps markets, funding rates, fees and margin tiers.",
+      "usage": "gumag perps markets list"
+    },
+    {
+      "examples": [
+        "gumag perps funding list SOL",
+        "gumag perps funding list SPCX --limit 168"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, ETH, SPCX, HYPE.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Hourly entries to return (1–720, default 168 = 7 days).",
+          "field": "limit",
+          "flag": "limit",
+          "in": "query",
+          "maximum": 720,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "funding rate history apr arbitrage spread hourly perps"
+      ],
+      "mcp": {
+        "description": "Historical hourly funding rates and average annualized rate for a GUM Perps market.",
+        "name": "get_perps_funding_history",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getPerpsFundingHistory",
+      "path": [
+        "perps",
+        "funding",
+        "list"
+      ],
+      "route": "/perps/markets/{symbol}/funding-history",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Hourly funding rate history and average APR for a Perps market.",
+      "usage": "gumag perps funding list <symbol> [--limit <n>]"
+    },
+    {
+      "examples": [
+        "gumag perps orderbook get SOL",
+        "gumag perps orderbook get SPCX --depth 10"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, ETH, SPCX, HYPE.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Levels per side (1–50, default 20).",
+          "field": "depth",
+          "flag": "depth",
+          "in": "query",
+          "maximum": 50,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "orderbook bids asks depth liquidity spread perps"
+      ],
+      "mcp": {
+        "description": "Current L2 orderbook bids and asks for a GUM Perps market.",
+        "name": "get_perps_orderbook",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getPerpsOrderbook",
+      "path": [
+        "perps",
+        "orderbook",
+        "get"
+      ],
+      "route": "/perps/markets/{symbol}/orderbook",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "L2 orderbook bids and asks for a Perps market.",
+      "usage": "gumag perps orderbook get <symbol> [--depth <depth>]"
+    },
+    {
+      "examples": [
+        "gumag perps orders cancel SOL --order-id 12345 --yes",
+        "gumag perps orders cancel SOL --cancel-all --dry-run --yes"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Set true to cancel every open order in this market.",
+          "field": "cancelAll",
+          "flag": "cancel-all",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "field": "clientOrderId",
+          "flag": "client-order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "orderId",
+          "flag": "order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        }
+      ],
+      "keywords": [
+        "cancel order perps close resting"
+      ],
+      "mcp": {
+        "description": "Cancel one open GUM Perps order (orderId or clientOrderId) or all open orders in a market (cancelAll: true). Set dryRun to check without cancelling.",
+        "name": "perps_cancel_order",
+        "omit": []
+      },
+      "method": "POST",
+      "operationId": "quotePerpsCancel",
+      "path": [
+        "perps",
+        "orders",
+        "cancel"
+      ],
+      "route": "/perps/orders/cancel/quote",
+      "run": {
+        "expect": {
+          "final": false,
+          "statuses": [
+            "accepted"
+          ],
+          "type": "perps_cancel"
+        },
+        "kind": "signed",
+        "recovery": "gumag perps account get",
+        "submit": {
+          "method": "POST",
+          "operationId": "executePerpsCancel",
+          "route": "/perps/orders/cancel"
+        },
+        "usd": "usdValue"
+      },
+      "summary": "Cancel one Perps order or all resting orders in a market.",
+      "usage": "gumag perps orders cancel <symbol> [--cancel-all] [--client-order-id <client-order-id>] [--margin-mode <cross|isolated>] [--order-id <order-id>] [--subaccount-id <subaccount-id>] [--dry-run] [--yes] [--max-usd <usd>]"
+    },
+    {
+      "examples": [
+        "gumag perps orders quote --symbol SOL --side buy --size 1 --order-type limit --price 150"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Your Solana or EVM wallet address.",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": false,
+          "type": "string",
+          "resolve": "wallet"
+        },
+        {
+          "description": "Optional unsigned 64-bit integer client order id.",
+          "field": "clientOrderId",
+          "flag": "client-order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"cross\".",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"market\".",
+          "enum": [
+            "market",
+            "limit",
+            "postOnly"
+          ],
+          "field": "orderType",
+          "flag": "order-type",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Limit price as a decimal string. Required for limit and postOnly orders.",
+          "field": "price",
+          "flag": "price",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "reduceOnly",
+          "flag": "reduce-only",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "buy opens/adds long; sell opens/adds short.",
+          "enum": [
+            "buy",
+            "sell"
+          ],
+          "field": "side",
+          "flag": "side",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Order size as a decimal string: base units by default, or USD when sizeCurrency is \"USD\".",
+          "field": "size",
+          "flag": "size",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"base\".",
+          "enum": [
+            "base",
+            "USD"
+          ],
+          "field": "sizeCurrency",
+          "flag": "size-currency",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Market order slippage cap in bps (default 100 = 1%, max 400 = 4%).",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 400,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "enum": [
+            "GTC",
+            "IOC",
+            "FOK"
+          ],
+          "field": "timeInForce",
+          "flag": "time-in-force",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "keywords": [
+        "perps preview price order margin quote"
+      ],
+      "mcp": {
+        "description": "Preview a GUM Perps market, limit or post-only order without submitting. Returns quantity, price and estimated USD notional.",
+        "name": "quote_perps_order",
+        "omit": [
+          "address"
+        ]
+      },
+      "method": "POST",
+      "operationId": "quotePerpsOrder",
+      "path": [
+        "perps",
+        "orders",
+        "quote"
+      ],
+      "route": "/perps/orders/quote",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Preview a GUM Perps order without submitting it.",
+      "usage": "gumag perps orders quote --side <buy|sell> --size <size> --symbol <symbol> [--address <address>] [--client-order-id <client-order-id>] [--margin-mode <cross|isolated>] [--order-type <market|limit|postOnly>] [--price <price>] [--reduce-only] [--size-currency <base|USD>] [--slippage <bps>] [--subaccount-id <subaccount-id>] [--time-in-force <GTC|IOC|FOK>]"
+    },
+    {
+      "examples": [
+        "gumag perps orders create --symbol SOL --side buy --size 1 --order-type limit --price 150 --dry-run --yes",
+        "gumag perps orders create --symbol SPCX --side sell --size 100 --size-currency USD --yes"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Optional unsigned 64-bit integer client order id.",
+          "field": "clientOrderId",
+          "flag": "client-order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"cross\".",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"market\".",
+          "enum": [
+            "market",
+            "limit",
+            "postOnly"
+          ],
+          "field": "orderType",
+          "flag": "order-type",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Limit price as a decimal string. Required for limit and postOnly orders.",
+          "field": "price",
+          "flag": "price",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "reduceOnly",
+          "flag": "reduce-only",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "buy opens/adds long; sell opens/adds short.",
+          "enum": [
+            "buy",
+            "sell"
+          ],
+          "field": "side",
+          "flag": "side",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Order size as a decimal string: base units by default, or USD when sizeCurrency is \"USD\".",
+          "field": "size",
+          "flag": "size",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"base\".",
+          "enum": [
+            "base",
+            "USD"
+          ],
+          "field": "sizeCurrency",
+          "flag": "size-currency",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Market order slippage cap in bps (default 100 = 1%, max 400 = 4%).",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 400,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "enum": [
+            "GTC",
+            "IOC",
+            "FOK"
+          ],
+          "field": "timeInForce",
+          "flag": "time-in-force",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        }
+      ],
+      "keywords": [
+        "perps trade long short market limit postonly"
+      ],
+      "mcp": {
+        "description": "Place a GUM Perps market, limit or postOnly order with this wallet. side is buy (long) or sell (short); size is in base units (or USD when sizeCurrency is USD). Set dryRun to verify without submitting. Needs a USD limit.",
+        "name": "perps_place_order",
+        "omit": []
+      },
+      "method": "POST",
+      "operationId": "quotePerpsOrder",
+      "path": [
+        "perps",
+        "orders",
+        "create"
+      ],
+      "route": "/perps/orders/quote",
+      "run": {
+        "expect": {
+          "final": false,
+          "statuses": [
+            "accepted"
+          ],
+          "type": "perps_order"
+        },
+        "kind": "signed",
+        "recovery": "gumag perps account get",
+        "submit": {
+          "method": "POST",
+          "operationId": "executePerpsOrder",
+          "route": "/perps/orders"
+        },
+        "usd": "usdValue"
+      },
+      "summary": "Place a GUM Perps order: quote, confirm, sign locally and submit.",
+      "usage": "gumag perps orders create --side <buy|sell> --size <size> --symbol <symbol> [--client-order-id <client-order-id>] [--margin-mode <cross|isolated>] [--order-type <market|limit|postOnly>] [--price <price>] [--reduce-only] [--size-currency <base|USD>] [--slippage <bps>] [--subaccount-id <subaccount-id>] [--time-in-force <GTC|IOC|FOK>] [--dry-run] [--yes] [--max-usd <usd>]"
+    },
+    {
+      "examples": [
+        "gumag long SOL 100 --dry-run --yes",
+        "gumag long SOL 100 --order-type limit --price 150 --yes"
+      ],
+      "fixed": {
+        "side": "buy",
+        "sizeCurrency": "USD"
+      },
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Optional unsigned 64-bit integer client order id.",
+          "field": "clientOrderId",
+          "flag": "client-order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"cross\".",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"market\".",
+          "enum": [
+            "market",
+            "limit",
+            "postOnly"
+          ],
+          "field": "orderType",
+          "flag": "order-type",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Limit price as a decimal string. Required for limit and postOnly orders.",
+          "field": "price",
+          "flag": "price",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "reduceOnly",
+          "flag": "reduce-only",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Order size as a decimal string: base units by default, or USD when sizeCurrency is \"USD\".",
+          "field": "size",
+          "flag": "size",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 1
+        },
+        {
+          "description": "Market order slippage cap in bps (default 100 = 1%, max 400 = 4%).",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 400,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "",
+          "enum": [
+            "GTC",
+            "IOC",
+            "FOK"
+          ],
+          "field": "timeInForce",
+          "flag": "time-in-force",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        }
+      ],
+      "keywords": [
+        "perps buy open long leverage usd"
+      ],
+      "method": "POST",
+      "operationId": "quotePerpsOrder",
+      "path": [
+        "long"
+      ],
+      "route": "/perps/orders/quote",
+      "run": {
+        "expect": {
+          "final": false,
+          "statuses": [
+            "accepted"
+          ],
+          "type": "perps_order"
+        },
+        "kind": "signed",
+        "recovery": "gumag perps account get",
+        "submit": {
+          "method": "POST",
+          "operationId": "executePerpsOrder",
+          "route": "/perps/orders"
+        },
+        "usd": "usdValue"
+      },
+      "summary": "Open or add to a GUM Perps long position sized in USD notional (market by default; use `perps orders create` for base-unit sizing).",
+      "usage": "gumag long <symbol> <usd> [--client-order-id <client-order-id>] [--margin-mode <cross|isolated>] [--order-type <market|limit|postOnly>] [--price <price>] [--reduce-only] [--slippage <bps>] [--subaccount-id <subaccount-id>] [--time-in-force <GTC|IOC|FOK>] [--dry-run] [--yes] [--max-usd <usd>]",
+      "shortcutOf": "perps orders create"
+    },
+    {
+      "examples": [
+        "gumag short SOL 100 --dry-run --yes",
+        "gumag short SOL 100 --order-type limit --price 160 --yes"
+      ],
+      "fixed": {
+        "side": "sell",
+        "sizeCurrency": "USD"
+      },
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Optional unsigned 64-bit integer client order id.",
+          "field": "clientOrderId",
+          "flag": "client-order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"cross\".",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"market\".",
+          "enum": [
+            "market",
+            "limit",
+            "postOnly"
+          ],
+          "field": "orderType",
+          "flag": "order-type",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Limit price as a decimal string. Required for limit and postOnly orders.",
+          "field": "price",
+          "flag": "price",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "reduceOnly",
+          "flag": "reduce-only",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Order size as a decimal string: base units by default, or USD when sizeCurrency is \"USD\".",
+          "field": "size",
+          "flag": "size",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 1
+        },
+        {
+          "description": "Market order slippage cap in bps (default 100 = 1%, max 400 = 4%).",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 400,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "",
+          "enum": [
+            "GTC",
+            "IOC",
+            "FOK"
+          ],
+          "field": "timeInForce",
+          "flag": "time-in-force",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        }
+      ],
+      "keywords": [
+        "perps sell open short hedge leverage usd"
+      ],
+      "method": "POST",
+      "operationId": "quotePerpsOrder",
+      "path": [
+        "short"
+      ],
+      "route": "/perps/orders/quote",
+      "run": {
+        "expect": {
+          "final": false,
+          "statuses": [
+            "accepted"
+          ],
+          "type": "perps_order"
+        },
+        "kind": "signed",
+        "recovery": "gumag perps account get",
+        "submit": {
+          "method": "POST",
+          "operationId": "executePerpsOrder",
+          "route": "/perps/orders"
+        },
+        "usd": "usdValue"
+      },
+      "summary": "Open or add to a GUM Perps short position sized in USD notional (market by default; use `perps orders create` for base-unit sizing).",
+      "usage": "gumag short <symbol> <usd> [--client-order-id <client-order-id>] [--margin-mode <cross|isolated>] [--order-type <market|limit|postOnly>] [--price <price>] [--reduce-only] [--slippage <bps>] [--subaccount-id <subaccount-id>] [--time-in-force <GTC|IOC|FOK>] [--dry-run] [--yes] [--max-usd <usd>]",
+      "shortcutOf": "perps orders create"
+    },
+    {
+      "examples": [
+        "gumag perps withdraw 50 --dry-run --yes",
+        "gumag perps withdraw 50 --subaccount-id 0 --yes"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "USD amount as a decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Perps sub-account index (0–4, default 0).",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        }
+      ],
+      "keywords": [
+        "perps collateral spot margin transfer back"
+      ],
+      "mcp": {
+        "description": "Move free USD from a GUM Perps sub-account back to your GUM spot balance (free). Set dryRun to check without moving funds. Needs a USD limit.",
+        "name": "perps_withdraw",
+        "omit": []
+      },
+      "method": "POST",
+      "operationId": "quotePerpsWithdraw",
+      "path": [
+        "perps",
+        "withdraw"
+      ],
+      "route": "/perps/withdraw/quote",
+      "run": {
+        "expect": {
+          "final": true,
+          "statuses": [
+            "completed"
+          ],
+          "type": "perps_withdraw"
+        },
+        "kind": "signed",
+        "recovery": "gumag perps account get",
+        "submit": {
+          "method": "POST",
+          "operationId": "executePerpsWithdraw",
+          "route": "/perps/withdraw"
+        },
+        "usd": "usdValue"
+      },
+      "summary": "Move free USD from a Perps sub-account back to GUM spot.",
+      "usage": "gumag perps withdraw <amount> [--subaccount-id <subaccount-id>] [--dry-run] [--yes] [--max-usd <usd>]"
+    },
+    {
+      "examples": [
+        "gumag swaps quote --side buy --token SOL --amount 25",
+        "gumag swaps quote --side sell --token SOL --amount 0.5"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "The account to quote for. Defaults to your wallet.",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": false,
+          "type": "string",
+          "resolve": "wallet"
+        },
+        {
+          "description": "Decimal string. Buy: USD to spend. Sell: tokens to sell.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The token's chain, e.g. 900 Solana or 8453 Base. Found from the token when left out.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "enum": [
+            "buy",
+            "sell"
+          ],
+          "field": "side",
+          "flag": "side",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Optional. Defaults to 100 (1%), 200 on Ethereum and Robinhood. Max 1000.",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 1000,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "A symbol (SOL) or the token's address. A symbol on several chains needs --chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "resolve": "token"
+        }
+      ],
+      "keywords": [
+        "price estimate how much cost receive preview"
+      ],
+      "mcp": {
+        "description": "Price a buy or a sell without trading. Buys take amount in USD; sells take it in tokens. Returns pay, receive (with its minimum), fee, usdValue and expiresAt.",
+        "name": "quote",
+        "omit": [
+          "address"
+        ]
+      },
+      "method": "POST",
+      "operationId": "quoteSwap",
+      "path": [
+        "swaps",
+        "quote"
+      ],
+      "route": "/swap/quote",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Price a buy (amount in USD) or a sell (amount in tokens) without trading.",
+      "usage": "gumag swaps quote --amount <amount> --side <buy|sell> --token <token> [--address <address>] [--chain <id>] [--slippage <bps>]"
+    },
+    {
+      "examples": [
+        "gumag swaps create --side sell --token SOL --amount 0.5 --dry-run",
+        "gumag swaps create --side buy --token SOL --amount 5 --max-usd 10 --yes"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Decimal string. Buy: USD to spend. Sell: tokens to sell.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The token's chain, e.g. 900 Solana or 8453 Base. Found from the token when left out.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "enum": [
+            "buy",
+            "sell"
+          ],
+          "field": "side",
+          "flag": "side",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Optional. Defaults to 100 (1%), 200 on Ethereum and Robinhood. Max 1000.",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 1000,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "A symbol (SOL) or the token's address. A symbol on several chains needs --chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "resolve": "token"
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        },
+        {
+          "description": "Return once submitted instead of waiting until it's final.",
+          "field": "noWait",
+          "flag": "no-wait",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Seconds to wait until it's final (default 180).",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "trade swap execute order"
+      ],
+      "mcp": {
+        "description": "Buy or sell with this wallet's GUM balance: quotes, signs, submits and waits up to a minute. Buys spend amount USD; sells sell amount tokens. Set dryRun to check everything without trading. Refused unless the server runs with a USD limit (GUM_MAX_TRADE_USD or the profile's). If the result isn't final yet, call get_swap with its id.",
+        "name": "trade",
+        "omit": [],
+        "waitSeconds": 60
+      },
+      "method": "POST",
+      "operationId": "quoteSwap",
+      "path": [
+        "swaps",
+        "create"
+      ],
+      "route": "/swap/quote",
+      "run": {
+        "kind": "signed",
+        "status": {
+          "method": "GET",
+          "operationId": "getSwap",
+          "route": "/swap/{id}"
+        },
+        "submit": {
+          "method": "POST",
+          "operationId": "executeSwap",
+          "route": "/swap"
+        },
+        "usd": "usdValue",
+        "waitSeconds": 180
+      },
+      "summary": "Buy or sell: quote, confirm, sign locally, submit and wait until it's final.",
+      "usage": "gumag swaps create --amount <amount> --side <buy|sell> --token <token> [--chain <id>] [--slippage <bps>] [--dry-run] [--yes] [--max-usd <usd>] [--no-wait] [--timeout <seconds>]"
+    },
+    {
+      "examples": [
+        "gumag buy SOL 5",
+        "gumag buy SOL 5 --dry-run --yes"
+      ],
+      "fixed": {
+        "side": "buy"
+      },
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Decimal string. Buy: USD to spend. Sell: tokens to sell.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 1
+        },
+        {
+          "description": "The token's chain, e.g. 900 Solana or 8453 Base. Found from the token when left out.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Optional. Defaults to 100 (1%), 200 on Ethereum and Robinhood. Max 1000.",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 1000,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "A symbol (SOL) or the token's address. A symbol on several chains needs --chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "resolve": "token",
+          "position": 0
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        },
+        {
+          "description": "Return once submitted instead of waiting until it's final.",
+          "field": "noWait",
+          "flag": "no-wait",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Seconds to wait until it's final (default 180).",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "purchase trade swap spend long ape get acquire"
+      ],
+      "method": "POST",
+      "operationId": "quoteSwap",
+      "path": [
+        "buy"
+      ],
+      "route": "/swap/quote",
+      "run": {
+        "kind": "signed",
+        "status": {
+          "method": "GET",
+          "operationId": "getSwap",
+          "route": "/swap/{id}"
+        },
+        "submit": {
+          "method": "POST",
+          "operationId": "executeSwap",
+          "route": "/swap"
+        },
+        "usd": "usdValue",
+        "waitSeconds": 180
+      },
+      "summary": "Spend USD on a token: quote, confirm, sign, submit and wait until it's final.",
+      "usage": "gumag buy <token> <usd> [--chain <id>] [--slippage <bps>] [--dry-run] [--yes] [--max-usd <usd>] [--no-wait] [--timeout <seconds>]",
+      "shortcutOf": "swaps create"
+    },
+    {
+      "examples": [
+        "gumag sell SOL 0.25 --yes"
+      ],
+      "fixed": {
+        "side": "sell"
+      },
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Decimal string. Buy: USD to spend. Sell: tokens to sell.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 1
+        },
+        {
+          "description": "The token's chain, e.g. 900 Solana or 8453 Base. Found from the token when left out.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Optional. Defaults to 100 (1%), 200 on Ethereum and Robinhood. Max 1000.",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 1000,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "A symbol (SOL) or the token's address. A symbol on several chains needs --chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "resolve": "token",
+          "position": 0
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        },
+        {
+          "description": "Return once submitted instead of waiting until it's final.",
+          "field": "noWait",
+          "flag": "no-wait",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Seconds to wait until it's final (default 180).",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "trade swap exit close dump cash out take profit"
+      ],
+      "method": "POST",
+      "operationId": "quoteSwap",
+      "path": [
+        "sell"
+      ],
+      "route": "/swap/quote",
+      "run": {
+        "kind": "signed",
+        "status": {
+          "method": "GET",
+          "operationId": "getSwap",
+          "route": "/swap/{id}"
+        },
+        "submit": {
+          "method": "POST",
+          "operationId": "executeSwap",
+          "route": "/swap"
+        },
+        "usd": "usdValue",
+        "waitSeconds": 180
+      },
+      "summary": "Sell a token for USD: quote, confirm, sign, submit and wait until it's final.",
+      "usage": "gumag sell <token> <amount> [--chain <id>] [--slippage <bps>] [--dry-run] [--yes] [--max-usd <usd>] [--no-wait] [--timeout <seconds>]",
+      "shortcutOf": "swaps create"
+    },
+    {
+      "examples": [
+        "gumag swaps get <id> --wait"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Poll until final is true.",
+          "field": "wait",
+          "flag": "wait",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Seconds to keep polling with --wait (default 600).",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "status track progress result order check done finished trade went through"
+      ],
+      "mcp": {
+        "description": "A swap's status by id. Done once final is true; while pending, step says what's happening.",
+        "name": "get_swap",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getSwap",
+      "path": [
+        "swaps",
+        "get"
+      ],
+      "route": "/swap/{id}",
+      "run": {
+        "kind": "request",
+        "readOnly": true,
+        "wait": {
+          "timeoutSeconds": 600,
+          "until": "final"
+        }
+      },
+      "summary": "A swap's status; --wait polls until it's final.",
+      "usage": "gumag swaps get <id> [--wait] [--timeout <seconds>]"
+    },
+    {
+      "examples": [
+        "gumag swaps watch <id>"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Stop after this many seconds.",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "live follow progress"
+      ],
+      "method": "GET",
+      "operationId": "streamSwap",
+      "path": [
+        "swaps",
+        "watch"
+      ],
+      "route": "/swap/{id}/events",
+      "run": {
+        "fallback": {
+          "method": "GET",
+          "operationId": "getSwap",
+          "route": "/swap/{id}"
+        },
+        "kind": "stream",
+        "until": "final"
+      },
+      "summary": "Follow a swap: one JSON line per update until it's final.",
+      "usage": "gumag swaps watch <id> [--timeout <seconds>]"
+    },
+    {
+      "examples": [
+        "gumag tokens search sol",
+        "gumag tokens search usdc --chain 8453"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "Symbol, name or address. Empty returns popular tokens.",
+          "field": "query",
+          "flag": "query",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "position": 0,
+          "variadic": true
+        },
+        {
+          "description": "Only this chain. With an address `query`, that token is looked up on this chain directly; if the lookup can't reach its source, the answer is a 502 to retry.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "query",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "limit",
+          "flag": "limit",
+          "in": "query",
+          "maximum": 50,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "find lookup symbol stock price address"
+      ],
+      "mcp": {
+        "description": "Find tradable tokens and stocks by symbol, name or address. Returns address, chainId, decimals, priceUsd, verified and riskLevel.",
+        "name": "search_tokens",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "searchTokens",
+      "path": [
+        "tokens",
+        "search"
+      ],
+      "route": "/tokens",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Find tradable tokens and stocks by symbol, name or address.",
+      "usage": "gumag tokens search [query...] [--chain <id>] [--limit <n>]"
+    },
+    {
+      "examples": [
+        "gumag withdrawals quote --amount 50 --token USD --to 0x1111111111111111111111111111111111111111 --chain 8453"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "The account to withdraw from. Defaults to your wallet.",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": false,
+          "type": "string",
+          "resolve": "wallet"
+        },
+        {
+          "description": "Decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Destination chain.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "description": "Address on chainId that receives the funds.",
+          "field": "destination",
+          "flag": "to",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "\"USD\" (paid out as the chain's dollar token), or the symbol or address of a token you hold on that chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "resolve": "token-or-usd"
+        }
+      ],
+      "keywords": [
+        "fee estimate preview payout cost"
+      ],
+      "mcp": {
+        "description": "Price a withdrawal without sending it: amount, fee, usdValue and warnings about the destination.",
+        "name": "quote_withdrawal",
+        "omit": [
+          "address"
+        ]
+      },
+      "method": "POST",
+      "operationId": "quoteWithdrawal",
+      "path": [
+        "withdrawals",
+        "quote"
+      ],
+      "route": "/withdraw/quote",
+      "run": {
+        "kind": "request",
+        "readOnly": true
+      },
+      "summary": "Price a withdrawal to an address on another chain without sending it.",
+      "usage": "gumag withdrawals quote --amount <amount> --chain <id> --to <address> --token <token> [--address <address>]"
+    },
+    {
+      "examples": [
+        "gumag withdrawals create --amount 50 --token USD --to 0x1111111111111111111111111111111111111111 --chain 8453 --dry-run"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Destination chain.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "description": "Address on chainId that receives the funds.",
+          "field": "destination",
+          "flag": "to",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "\"USD\" (paid out as the chain's dollar token), or the symbol or address of a token you hold on that chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "resolve": "token-or-usd"
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        },
+        {
+          "description": "Return once submitted instead of waiting until it's final.",
+          "field": "noWait",
+          "flag": "no-wait",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Seconds to wait until it's final (default 1200).",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "send transfer payout cash out off ramp move funds usdc usdt"
+      ],
+      "mcp": {
+        "description": "Send funds to an address on another chain. token is \"USD\" (paid out as that chain's dollar token) or a token you hold. Returns once submitted; follow it with get_withdrawal. Set dryRun to check without sending. Refused unless the server runs with a USD limit (GUM_MAX_TRADE_USD or the profile's).",
+        "name": "withdraw",
+        "omit": [],
+        "waitSeconds": 0
+      },
+      "method": "POST",
+      "operationId": "quoteWithdrawal",
+      "path": [
+        "withdrawals",
+        "create"
+      ],
+      "route": "/withdraw/quote",
+      "run": {
+        "kind": "signed",
+        "status": {
+          "method": "GET",
+          "operationId": "getWithdrawal",
+          "route": "/withdraw/{id}"
+        },
+        "submit": {
+          "method": "POST",
+          "operationId": "executeWithdrawal",
+          "route": "/withdraw"
+        },
+        "usd": "usdValue",
+        "waitSeconds": 1200
+      },
+      "summary": "Send USD or a token to an address on another chain: quote, confirm, sign, submit and wait until it's final.",
+      "usage": "gumag withdrawals create --amount <amount> --chain <id> --to <address> --token <token> [--dry-run] [--yes] [--max-usd <usd>] [--no-wait] [--timeout <seconds>]"
+    },
+    {
+      "examples": [
+        "gumag withdraw 50 USD --to 0x1111111111111111111111111111111111111111 --chain 8453 --dry-run --yes"
+      ],
+      "fixed": {},
+      "hidden": {
+        "address": "wallet"
+      },
+      "inputs": [
+        {
+          "description": "Decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Destination chain.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "description": "Address on chainId that receives the funds.",
+          "field": "destination",
+          "flag": "to",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "\"USD\" (paid out as the chain's dollar token), or the symbol or address of a token you hold on that chain.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "resolve": "token-or-usd",
+          "position": 1
+        },
+        {
+          "description": "Quote and sign, then have the API check the signature without submitting. Nothing moves.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Don't ask before signing. Required when nobody is at the terminal: without it the command stops with the quote.",
+          "field": "yes",
+          "flag": "yes",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Refuse anything above this many dollars. The lowest of this, GUM_MAX_TRADE_USD and the profile's limit applies.",
+          "field": "maxUsd",
+          "flag": "max-usd",
+          "in": "cli",
+          "required": false,
+          "type": "number"
+        },
+        {
+          "description": "Return once submitted instead of waiting until it's final.",
+          "field": "noWait",
+          "flag": "no-wait",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Seconds to wait until it's final (default 1200).",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "send transfer payout cash out off ramp move funds usdc usdt"
+      ],
+      "method": "POST",
+      "operationId": "quoteWithdrawal",
+      "path": [
+        "withdraw"
+      ],
+      "route": "/withdraw/quote",
+      "run": {
+        "kind": "signed",
+        "status": {
+          "method": "GET",
+          "operationId": "getWithdrawal",
+          "route": "/withdraw/{id}"
+        },
+        "submit": {
+          "method": "POST",
+          "operationId": "executeWithdrawal",
+          "route": "/withdraw"
+        },
+        "usd": "usdValue",
+        "waitSeconds": 1200
+      },
+      "summary": "Send USD or a token to an address on another chain.",
+      "usage": "gumag withdraw <amount> <USD|token> --chain <id> --to <address> [--dry-run] [--yes] [--max-usd <usd>] [--no-wait] [--timeout <seconds>]",
+      "shortcutOf": "withdrawals create"
+    },
+    {
+      "examples": [
+        "gumag withdrawals get <id> --wait"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Poll until final is true.",
+          "field": "wait",
+          "flag": "wait",
+          "in": "cli",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Seconds to keep polling with --wait (default 1200).",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "status track progress result payout check done arrived"
+      ],
+      "mcp": {
+        "description": "A withdrawal's status by id. Done once final is true.",
+        "name": "get_withdrawal",
+        "omit": []
+      },
+      "method": "GET",
+      "operationId": "getWithdrawal",
+      "path": [
+        "withdrawals",
+        "get"
+      ],
+      "route": "/withdraw/{id}",
+      "run": {
+        "kind": "request",
+        "readOnly": true,
+        "wait": {
+          "timeoutSeconds": 1200,
+          "until": "final"
+        }
+      },
+      "summary": "A withdrawal's status; --wait polls until it's final.",
+      "usage": "gumag withdrawals get <id> [--wait] [--timeout <seconds>]"
+    },
+    {
+      "examples": [
+        "gumag withdrawals watch <id>"
+      ],
+      "fixed": {},
+      "hidden": {},
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "position": 0
+        },
+        {
+          "description": "Stop after this many seconds.",
+          "field": "timeout",
+          "flag": "timeout",
+          "in": "cli",
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "keywords": [
+        "live follow progress payout"
+      ],
+      "method": "GET",
+      "operationId": "streamWithdrawal",
+      "path": [
+        "withdrawals",
+        "watch"
+      ],
+      "route": "/withdraw/{id}/events",
+      "run": {
+        "fallback": {
+          "method": "GET",
+          "operationId": "getWithdrawal",
+          "route": "/withdraw/{id}"
+        },
+        "kind": "stream",
+        "until": "final"
+      },
+      "summary": "Follow a withdrawal: one JSON line per update until it's final.",
+      "usage": "gumag withdrawals watch <id> [--timeout <seconds>]"
+    }
+  ],
+  "operations": [
+    {
+      "description": "",
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getBalances",
+      "route": "/balances/{address}",
+      "stream": false,
+      "summary": "Get cash (USD) and token balances"
+    },
+    {
+      "description": "",
+      "inputs": [],
+      "method": "GET",
+      "operationId": "listChains",
+      "route": "/chains",
+      "stream": false,
+      "summary": "List supported chains"
+    },
+    {
+      "description": "Your own deposit address on every supported chain. Send any token worth more than `minimumUsd`; it is credited to your GUM balance, usually within seconds of confirmation. Rate limited more tightly: the first call creates the addresses.",
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getDepositAddresses",
+      "route": "/deposit-addresses/{address}",
+      "stream": false,
+      "summary": "Get your deposit addresses"
+    },
+    {
+      "description": "Live deposits for an account (server-sent events). Each message is one JSON object: `{ type: \"deposit\", status, final, step, chainId, amount, txHash, explorerUrl, gumTransactionId, at }`. The first message is `{ type: \"subscribed\" }`. Live only: open it before sending funds, or read GET /history/{address}?type=deposit afterwards.",
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "streamDeposits",
+      "route": "/deposits/{address}/events",
+      "stream": true,
+      "summary": "Stream deposits as they arrive"
+    },
+    {
+      "description": "",
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "enum": [
+            "deposit",
+            "swap",
+            "withdrawal"
+          ],
+          "field": "type",
+          "flag": "type",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "limit",
+          "flag": "limit",
+          "in": "query",
+          "maximum": 100,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "`nextCursor` from the previous page.",
+          "field": "cursor",
+          "flag": "cursor",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Only one market: the token's chain (GET /chains). Pass it with `token`.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "query",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Only one market: the token's address on chainId (from GET /tokens). Pass it with `chainId`.",
+          "field": "token",
+          "flag": "token",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Only one market, by its GUM mint. Use instead of `chainId` and `token`.",
+          "field": "mint",
+          "flag": "mint",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getHistory",
+      "route": "/history/{address}",
+      "stream": false,
+      "summary": "List deposits, swaps and withdrawals"
+    },
+    {
+      "description": "List a wallet's GUM Perps sub-accounts, balances, configured market leverage settings, open positions and resting orders.",
+      "inputs": [
+        {
+          "description": "Your account: a Solana address, an EVM 0x address, or a GUM address.",
+          "field": "address",
+          "flag": "address",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Filter to one sub-account (0–4).",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "query",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getPerpsAccount",
+      "route": "/perps/accounts/{address}",
+      "stream": false,
+      "summary": "Get Perps sub-accounts, configured leverage, positions and open orders"
+    },
+    {
+      "description": "",
+      "exclude": "Submits a signed Perps deposit: only perps deposit signs one, after the USD limit and confirmation.",
+      "inputs": [
+        {
+          "description": "Check the signature without submitting. Nothing is sent or charged.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+          "field": "signature",
+          "flag": "signature",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The quote's `transaction`, unchanged.",
+          "field": "transaction",
+          "flag": "transaction",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "executePerpsDeposit",
+      "route": "/perps/deposit",
+      "stream": false,
+      "summary": "Submit a signed Perps deposit"
+    },
+    {
+      "description": "Prepare a free USD transfer from your GUM spot balance into a GUM Perps sub-account.",
+      "inputs": [
+        {
+          "description": "Your Solana or EVM wallet address.",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "USD amount as a decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Perps sub-account index (0–4, default 0).",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "method": "POST",
+      "operationId": "quotePerpsDeposit",
+      "route": "/perps/deposit/quote",
+      "stream": false,
+      "summary": "Quote a Perps USD deposit"
+    },
+    {
+      "description": "",
+      "exclude": "Submits a signed Perps leverage update: only perps leverage set signs one, after confirmation.",
+      "inputs": [
+        {
+          "description": "Check the signature without submitting. Nothing is sent or charged.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+          "field": "signature",
+          "flag": "signature",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The quote's `transaction`, unchanged.",
+          "field": "transaction",
+          "flag": "transaction",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "executePerpsLeverage",
+      "route": "/perps/leverage",
+      "stream": false,
+      "summary": "Submit a signed Perps leverage update"
+    },
+    {
+      "description": "",
+      "inputs": [
+        {
+          "description": "",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Target leverage multiplier (1–100).",
+          "field": "leverage",
+          "flag": "leverage",
+          "in": "body",
+          "maximum": 100,
+          "minimum": 1,
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "description": "Defaults to \"cross\".",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "quotePerpsLeverage",
+      "route": "/perps/leverage/quote",
+      "stream": false,
+      "summary": "Quote a Perps leverage update"
+    },
+    {
+      "description": "All active GUM Perps markets with live mark/index prices, hourly and annualized funding rates, open interest, maker/taker fees and margin tiers.",
+      "inputs": [],
+      "method": "GET",
+      "operationId": "listPerpsMarkets",
+      "route": "/perps/markets",
+      "stream": false,
+      "summary": "List GUM Perps markets and funding rates"
+    },
+    {
+      "description": "Historical hourly funding rates for a GUM Perps market, plus the period average annualized rate.",
+      "inputs": [
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, ETH, SPCX, HYPE.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Hourly entries to return (1–720, default 168 = 7 days).",
+          "field": "limit",
+          "flag": "limit",
+          "in": "query",
+          "maximum": 720,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getPerpsFundingHistory",
+      "route": "/perps/markets/{symbol}/funding-history",
+      "stream": false,
+      "summary": "Get hourly Perps funding history"
+    },
+    {
+      "description": "Current L2 orderbook bids and asks for a market.",
+      "inputs": [
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, ETH, SPCX, HYPE.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Levels per side (1–50, default 20).",
+          "field": "depth",
+          "flag": "depth",
+          "in": "query",
+          "maximum": 50,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getPerpsOrderbook",
+      "route": "/perps/markets/{symbol}/orderbook",
+      "stream": false,
+      "summary": "Get a Perps market orderbook"
+    },
+    {
+      "description": "",
+      "exclude": "Submits a signed Perps order: only perps orders create, perps close, long and short sign one, after the USD limit and confirmation.",
+      "inputs": [
+        {
+          "description": "Check the signature without submitting. Nothing is sent or charged.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+          "field": "signature",
+          "flag": "signature",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The quote's `transaction`, unchanged.",
+          "field": "transaction",
+          "flag": "transaction",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "executePerpsOrder",
+      "route": "/perps/orders",
+      "stream": false,
+      "summary": "Submit a signed Perps order"
+    },
+    {
+      "description": "",
+      "exclude": "Submits a signed Perps cancellation: only perps orders cancel signs one, after confirmation.",
+      "inputs": [
+        {
+          "description": "Check the signature without submitting. Nothing is sent or charged.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+          "field": "signature",
+          "flag": "signature",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The quote's `transaction`, unchanged.",
+          "field": "transaction",
+          "flag": "transaction",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "executePerpsCancel",
+      "route": "/perps/orders/cancel",
+      "stream": false,
+      "summary": "Submit a signed Perps cancellation"
+    },
+    {
+      "description": "Prepare a cancellation for a single order (by orderId or clientOrderId) or every open order in a market (cancelAll: true).",
+      "inputs": [
+        {
+          "description": "",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Set true to cancel every open order in this market.",
+          "field": "cancelAll",
+          "flag": "cancel-all",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "field": "clientOrderId",
+          "flag": "client-order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "orderId",
+          "flag": "order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "quotePerpsCancel",
+      "route": "/perps/orders/cancel/quote",
+      "stream": false,
+      "summary": "Quote a Perps order cancellation"
+    },
+    {
+      "description": "Prepare a market, limit or post-only GUM Perps order. Sign `message` with your wallet and submit `{ transaction, signature }` to POST /v1/perps/orders.",
+      "inputs": [
+        {
+          "description": "Your Solana or EVM wallet address.",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Optional unsigned 64-bit integer client order id.",
+          "field": "clientOrderId",
+          "flag": "client-order-id",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"cross\".",
+          "enum": [
+            "cross",
+            "isolated"
+          ],
+          "field": "marginMode",
+          "flag": "margin-mode",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"market\".",
+          "enum": [
+            "market",
+            "limit",
+            "postOnly"
+          ],
+          "field": "orderType",
+          "flag": "order-type",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Limit price as a decimal string. Required for limit and postOnly orders.",
+          "field": "price",
+          "flag": "price",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "field": "reduceOnly",
+          "flag": "reduce-only",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "buy opens/adds long; sell opens/adds short.",
+          "enum": [
+            "buy",
+            "sell"
+          ],
+          "field": "side",
+          "flag": "side",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Order size as a decimal string: base units by default, or USD when sizeCurrency is \"USD\".",
+          "field": "size",
+          "flag": "size",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Defaults to \"base\".",
+          "enum": [
+            "base",
+            "USD"
+          ],
+          "field": "sizeCurrency",
+          "flag": "size-currency",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Market order slippage cap in bps (default 100 = 1%, max 400 = 4%).",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 400,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "Perps market symbol, e.g. SOL, BTC, SPCX.",
+          "field": "symbol",
+          "flag": "symbol",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "",
+          "enum": [
+            "GTC",
+            "IOC",
+            "FOK"
+          ],
+          "field": "timeInForce",
+          "flag": "time-in-force",
+          "in": "body",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "quotePerpsOrder",
+      "route": "/perps/orders/quote",
+      "stream": false,
+      "summary": "Quote a Perps order"
+    },
+    {
+      "description": "",
+      "exclude": "Submits a signed Perps withdrawal: only perps withdraw signs one, after the USD limit and confirmation.",
+      "inputs": [
+        {
+          "description": "Check the signature without submitting. Nothing is sent or charged.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+          "field": "signature",
+          "flag": "signature",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The quote's `transaction`, unchanged.",
+          "field": "transaction",
+          "flag": "transaction",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "executePerpsWithdraw",
+      "route": "/perps/withdraw",
+      "stream": false,
+      "summary": "Submit a signed Perps withdrawal"
+    },
+    {
+      "description": "Prepare a free USD transfer from a GUM Perps sub-account back to your GUM spot balance.",
+      "inputs": [
+        {
+          "description": "Your Solana or EVM wallet address.",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "USD amount as a decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Perps sub-account index (0–4, default 0).",
+          "field": "subaccountId",
+          "flag": "subaccount-id",
+          "in": "body",
+          "maximum": 4,
+          "minimum": 0,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "method": "POST",
+      "operationId": "quotePerpsWithdraw",
+      "route": "/perps/withdraw/quote",
+      "stream": false,
+      "summary": "Quote a Perps USD withdrawal"
+    },
+    {
+      "description": "Submit a signed quote. Returns 202 with `status: pending`; track `id` until `final` is true. Swaps that settle inside the transaction (selling BSC USDT or Robinhood USDG) complete as soon as GUM Network confirms them.",
+      "exclude": "Submits a signed quote: only swaps create, buy and sell sign one, after the USD limit and confirmation.",
+      "inputs": [
+        {
+          "description": "Check the signature without submitting. Nothing is sent or charged.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+          "field": "signature",
+          "flag": "signature",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The quote's `transaction`, unchanged.",
+          "field": "transaction",
+          "flag": "transaction",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "executeSwap",
+      "route": "/swap",
+      "stream": false,
+      "summary": "Submit a signed buy or sell"
+    },
+    {
+      "description": "Quote a buy (spend `amount` USD) or a sell (sell `amount` tokens). Sign `message` with the wallet in `signer`, then POST /swap before `expiresAt`.",
+      "inputs": [
+        {
+          "description": "Your Solana or EVM wallet address.",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Decimal string. Buy: USD to spend. Sell: tokens to sell.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The token's chain (GET /chains).",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "enum": [
+            "buy",
+            "sell"
+          ],
+          "field": "side",
+          "flag": "side",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Optional. Defaults to 100 (1%), 200 on Ethereum and Robinhood. Max 1000.",
+          "field": "slippageBps",
+          "flag": "slippage",
+          "in": "body",
+          "maximum": 1000,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "The token's address on chainId (from GET /tokens).",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "quoteSwap",
+      "route": "/swap/quote",
+      "stream": false,
+      "summary": "Quote a buy or sell"
+    },
+    {
+      "description": "",
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getSwap",
+      "route": "/swap/{id}",
+      "stream": false,
+      "summary": "Get a swap's status"
+    },
+    {
+      "description": "Server-sent events. Every message is the full Activity object; the first is the current status, and the stream closes after the first message with `final: true`.",
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "streamSwap",
+      "route": "/swap/{id}/events",
+      "stream": true,
+      "summary": "Stream a swap's status"
+    },
+    {
+      "description": "Tokens and tokenized stocks you can trade right now, matched on symbol, name or address. Several tokens can share a symbol: pick by `address`, and prefer `verified: true`.",
+      "inputs": [
+        {
+          "description": "Symbol, name or address. Empty returns popular tokens.",
+          "field": "query",
+          "flag": "query",
+          "in": "query",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "description": "Only this chain. With an address `query`, that token is looked up on this chain directly; if the lookup can't reach its source, the answer is a 502 to retry.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "query",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "description": "",
+          "field": "limit",
+          "flag": "limit",
+          "in": "query",
+          "maximum": 50,
+          "minimum": 1,
+          "required": false,
+          "type": "integer"
+        }
+      ],
+      "method": "GET",
+      "operationId": "searchTokens",
+      "route": "/tokens",
+      "stream": false,
+      "summary": "Search tradable tokens"
+    },
+    {
+      "description": "",
+      "exclude": "Submits a signed withdrawal: only withdrawals create and withdraw sign one, after the USD limit and confirmation.",
+      "inputs": [
+        {
+          "description": "Check the signature without submitting. Nothing is sent or charged.",
+          "field": "dryRun",
+          "flag": "dry-run",
+          "in": "body",
+          "required": false,
+          "type": "boolean"
+        },
+        {
+          "description": "Your wallet's signature of the quote's `message` bytes. Solana: the 64-byte Ed25519 signature as base58, base64 or hex. EVM: the 0x hex string from personal_sign / signMessage over the raw bytes.",
+          "field": "signature",
+          "flag": "signature",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The quote's `transaction`, unchanged.",
+          "field": "transaction",
+          "flag": "transaction",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "executeWithdrawal",
+      "route": "/withdraw",
+      "stream": false,
+      "summary": "Submit a signed withdrawal"
+    },
+    {
+      "description": "",
+      "inputs": [
+        {
+          "description": "",
+          "field": "address",
+          "flag": "address",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Decimal string.",
+          "field": "amount",
+          "flag": "amount",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Destination chain.",
+          "field": "chainId",
+          "flag": "chain",
+          "in": "body",
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "description": "Address on chainId that receives the funds.",
+          "field": "destination",
+          "flag": "to",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "\"USD\" to withdraw cash as the chain's dollar token, or the address of a token you hold on chainId.",
+          "field": "token",
+          "flag": "token",
+          "in": "body",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "POST",
+      "operationId": "quoteWithdrawal",
+      "route": "/withdraw/quote",
+      "stream": false,
+      "summary": "Quote a withdrawal"
+    },
+    {
+      "description": "",
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "getWithdrawal",
+      "route": "/withdraw/{id}",
+      "stream": false,
+      "summary": "Get a withdrawal's status"
+    },
+    {
+      "description": "",
+      "inputs": [
+        {
+          "description": "The `id` returned when you submitted.",
+          "field": "id",
+          "flag": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "method": "GET",
+      "operationId": "streamWithdrawal",
+      "route": "/withdraw/{id}/events",
+      "stream": true,
+      "summary": "Stream a withdrawal's status"
+    }
+  ],
+  "server": "https://api.gum.ag/app/v1",
+  "specSha256": "b2ec75752ff2d59a76bf8efa614b41386385d02492688dadb2d39af1ab992492",
+  "title": "GUM Trading API",
+  "version": "1.0.0"
+}

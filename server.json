@@ -1,0 +1,62 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jupnet/gum-cli",
+  "title": "GUM Trading CLI & MCP",
+  "description": "Trade spot tokens, tokenized stocks, and up to 50x perps across chains on GUM by Jupiter.",
+  "version": "0.3.0",
+  "websiteUrl": "https://docs.gum.ag/trading-api/cli",
+  "icons": [
+    {
+      "src": "https://gum.ag/icon.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/jupnet/gum-cli",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@gumag/cli",
+      "version": "0.3.0",
+      "runtimeHint": "npx",
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "GUM_SOLANA_SECRET_KEY",
+          "description": "Optional base58 or JSON-array Solana private key for headless signing (otherwise uses ~/.config/gum profile).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GUM_EVM_PRIVATE_KEY",
+          "description": "Optional 0x-prefixed EVM private key for headless signing (otherwise uses ~/.config/gum profile).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "GUM_MAX_TRADE_USD",
+          "description": "Optional per-trade or withdrawal USD limit enforced locally before signing.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "GUM_API_URL",
+          "description": "Optional Trading API base URL override (defaults to https://api.gum.ag/app/v1).",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

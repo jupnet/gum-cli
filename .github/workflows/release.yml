@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      publish_mcp:
+        description: "Publish server.json to the Official MCP Registry"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Verify release ref, package.json, and server.json
+        id: meta
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const semver = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const srv = JSON.parse(fs.readFileSync("server.json", "utf8"));
+            if (!semver.test(pkg.version)) {
+              throw new Error("Invalid semver in package.json: " + pkg.version);
+            }
+            const ref = process.env.GITHUB_REF || "";
+            const refName = process.env.GITHUB_REF_NAME || "";
+            if (process.env.GITHUB_EVENT_NAME === "workflow_dispatch" && ref !== "refs/heads/main" && !ref.startsWith("refs/tags/v")) {
+              throw new Error("Manual releases must run from main or a v* tag (got " + ref + ")");
+            }
+            if (ref.startsWith("refs/tags/v") && refName !== "v" + pkg.version) {
+              throw new Error("Tag " + refName + " does not match package.json version " + pkg.version);
+            }
+            const npmPkg = (srv.packages || []).find((p) => p.registryType === "npm" && p.identifier === pkg.name);
+            if (!npmPkg || srv.version !== pkg.version || npmPkg.version !== pkg.version || srv.name !== pkg.mcpName) {
+              throw new Error("server.json and package.json are out of sync");
+            }
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "version=" + pkg.version + "\n");
+          '
+
+      - name: Verify generated files, types, lint, tests, and build
+        run: |
+          bun run generate --check
+          bun run type-check
+          bun run lint
+          bun run test
+          bun run build
+          node dist/cli.mjs --version
+
+      - name: Upload built dist artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cli-dist
+          path: dist/
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.16
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Download built dist artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: cli-dist
+          path: dist/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish to npm with provenance
+        env:
+          NPM_TOKEN_SECRET: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if npm view "@gumag/cli@${VERSION}" version >/dev/null 2>&1; then
+            echo "@gumag/cli@${VERSION} is already published on npm; skipping npm publish."
+            exit 0
+          fi
+          if [ -n "${NPM_TOKEN_SECRET:-}" ]; then
+            export NODE_AUTH_TOKEN="${NPM_TOKEN_SECRET}"
+          fi
+          npm publish --ignore-scripts --provenance --access public
+
+      - name: Install cosign
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish_mcp }}
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
+
+      - name: Download and verify mcp-publisher
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish_mcp }}
+        run: |
+          set -euo pipefail
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+          archive="mcp-publisher_${os}_${arch}.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+
+          curl --fail --location --silent --show-error --output "${RUNNER_TEMP}/${archive}" "${base_url}/${archive}"
+          curl --fail --location --silent --show-error --output "${RUNNER_TEMP}/${archive}.sigstore.json" "${base_url}/${archive}.sigstore.json"
+
+          cosign verify-blob \
+            --bundle "${RUNNER_TEMP}/${archive}.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release-publisher.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${RUNNER_TEMP}/${archive}"
+
+          tar -xzf "${RUNNER_TEMP}/${archive}" -C "${RUNNER_TEMP}"
+          chmod +x "${RUNNER_TEMP}/mcp-publisher"
+
+      - name: Publish to Official MCP Registry
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish_mcp }}
+        run: |
+          set -euo pipefail
+          "${RUNNER_TEMP}/mcp-publisher" login github-oidc
+          "${RUNNER_TEMP}/mcp-publisher" publish
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+          else
+            gh release create "$TAG" --title "$TAG" --generate-notes
+          fi

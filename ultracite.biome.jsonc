@@ -1,0 +1,63 @@
+{
+  "extends": ["ultracite/biome/core"],
+  "vcs": {
+    "enabled": false
+  },
+  "files": {
+    "includes": [
+      "!**/dist",
+      "!**/node_modules",
+      "!**/build",
+      "!**/coverage",
+      "!**/src/generated",
+      "!**/apis/*/openapi.json"
+    ]
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "indentWidth": 4
+    }
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "useFilenamingConvention": "off",
+        "noNamespace": "off",
+        "useBlockStatements": "off",
+        "noEnum": "off",
+        "noNestedTernary": "off",
+        "noSubstr": "off",
+        "useConsistentMemberAccessibility": "off",
+        "useConsistentTypeDefinitions": "off",
+        "useReadonlyClassProperties": "off",
+        // GumError takes its cause in its third argument (code, message,
+        // { cause }), which this rule can't see.
+        "useErrorCause": "off"
+      },
+      "suspicious": {
+        "noShadow": "error",
+        "useAwait": "off",
+        "noConsole": "off",
+        "useNumberToFixedDigitsArgument": "off",
+        "noBitwiseOperators": "off"
+      },
+      "performance": {
+        "noImgElement": "off",
+        "noNamespaceImport": "off",
+        "noAwaitInLoops": "off",
+        "noBarrelFile": "off"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "useKeyWithClickEvents": "off",
+        "noNoninteractiveElementInteractions": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off",
+        "useSimplifiedLogicExpression": "off"
+      }
+    }
+  }
+}
