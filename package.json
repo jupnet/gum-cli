@@ -35,8 +35,8 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "gumag": "./dist/cli.mjs",
-    "gumx": "./dist/cli.mjs"
+    "gumag": "dist/cli.mjs",
+    "gumx": "dist/cli.mjs"
   },
   "files": [
     "dist"

@@ -121,7 +121,21 @@ jobs:
             chmod 600 "${RUNNER_TEMP}/.npmrc"
             export NPM_CONFIG_USERCONFIG="${RUNNER_TEMP}/.npmrc"
           fi
+          chmod +x dist/cli.mjs
           npm publish --ignore-scripts --provenance --access public
+
+          echo "Waiting for @gumag/cli@${VERSION} to become available on npm..."
+          for i in $(seq 1 30); do
+            if npm view "@gumag/cli@${VERSION}" version >/dev/null 2>&1; then
+              echo "@gumag/cli@${VERSION} is live on npm."
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Timed out waiting for @gumag/cli@${VERSION} to appear on npm." >&2
+              exit 1
+            fi
+            sleep 10
+          done
 
       - name: Install cosign
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish_mcp }}
@@ -141,7 +155,7 @@ jobs:
 
           cosign verify-blob \
             --bundle "${RUNNER_TEMP}/${archive}.sigstore.json" \
-            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release-publisher.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
             "${RUNNER_TEMP}/${archive}"
 
