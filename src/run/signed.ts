@@ -1,4 +1,4 @@
-import { GumError, toErrorBody } from "../api";
+import { GumError, isLoopbackHost, toErrorBody } from "../api";
 import type { Context } from "../context";
 import type {
     Command,
@@ -54,14 +54,17 @@ const hostOf = (url: string) => {
     }
 };
 
-const isGumHost = (host: string) => {
-    const name = host.split(":")[0] ?? host;
-    return (
-        name === "gum.ag" ||
-        name.endsWith(".gum.ag") ||
-        name === "localhost" ||
-        name === "127.0.0.1"
-    );
+const isGumEndpoint = (urlString: string) => {
+    try {
+        const parsed = new URL(urlString);
+        const name = parsed.hostname;
+        if (parsed.protocol === "https:") {
+            return name === "gum.ag" || name.endsWith(".gum.ag");
+        }
+        return parsed.protocol === "http:" && isLoopbackHost(name);
+    } catch {
+        return false;
+    }
 };
 
 const operation = (operationId: string) => {
@@ -147,16 +150,16 @@ const isValidSynchronousSubmission = (
     return true;
 };
 
-/** The USD limit to sign under; MCP refuses to sign without one, dry runs aside. */
+/** The USD limit to sign under; MCP refuses to sign without one, including dry runs. */
 export const limitFor = (
     context: Context,
-    options: Pick<SignedOptions, "dryRun" | "maxUsd" | "requireLimit">
+    options: Pick<SignedOptions, "maxUsd" | "requireLimit">
 ) => {
     const limit = limitOf(options.maxUsd, context.env, context.settings);
-    if (options.requireLimit && limit === undefined && !options.dryRun) {
+    if (options.requireLimit && limit === undefined) {
         throw new GumError(
             "limit_required",
-            "Signing over MCP needs a USD limit. Set GUM_MAX_TRADE_USD in the MCP server's environment (a profile's own limit counts too). Dry runs work without one."
+            "Signing over MCP needs a USD limit, including dry runs (which still sign locally). Set GUM_MAX_TRADE_USD in the MCP server's environment (a profile's own limit counts too). Use quote tools for unsigned quotes."
         );
     }
     return limit;
@@ -214,7 +217,7 @@ export const runSigned = async (
                 );
             }
             context.io.stderr(`${formatJson(priced, "pretty")}\n`);
-            if (!isGumHost(host)) {
+            if (!isGumEndpoint(context.api.baseUrl)) {
                 context.io.stderr(
                     `Warning: ${host} isn't gum.ag. You'd be signing a transaction it built.\n`
                 );
@@ -258,6 +261,16 @@ export const runSigned = async (
                     : submitFailure(error, recoveryCommand);
             });
         if (options.dryRun) {
+            if (
+                typeof submitted !== "object" ||
+                submitted === null ||
+                Array.isArray(submitted)
+            ) {
+                throw new GumError(
+                    "invalid_response",
+                    "The dry-run response was empty or malformed."
+                );
+            }
             return { ...submitted, quote: priced };
         }
         if (!status) {
@@ -281,15 +294,21 @@ export const runSigned = async (
             }
             return { ...submitted, quote: priced };
         }
-        if (!options.wait) {
-            return { ...submitted, quote: priced };
-        }
-        if (typeof submitted?.id !== "string" || !submitted.id.trim()) {
+        if (
+            typeof submitted !== "object" ||
+            submitted === null ||
+            Array.isArray(submitted) ||
+            typeof submitted.id !== "string" ||
+            !submitted.id.trim()
+        ) {
             throw new GumError(
                 "invalid_response",
                 "The submission response has no operation ID. Its outcome is unknown. Do not submit again; check account history.",
                 { details: { retrySubmission: false, submissionUnknown: true } }
             );
+        }
+        if (!options.wait) {
+            return { ...submitted, quote: priced };
         }
         try {
             const final = await waitUntil(

@@ -75,4 +75,4 @@ Docs: `https://docs.gum.ag/trading-api/cli` · OpenAPI: `https://api.gum.ag/app/
 claude mcp add gum -- npx -y @gumag/cli@latest mcp
 ```
 
-Use `GUM_MAX_TRADE_USD` on the MCP server environment before calling signed write tools (`trade`, `withdraw`, `perps_place_order`, `perps_close_position`, `perps_cancel_order`, `perps_deposit`, `perps_withdraw`, `perps_set_leverage`).
+Use `GUM_MAX_TRADE_USD` on the MCP server environment before calling signed write tools (`trade`, `withdraw`, `perps_place_order`, `perps_close_position`, `perps_cancel_order`, `perps_deposit`, `perps_withdraw`, `perps_set_leverage`), including `dryRun: true` (which still signs locally). Use `quote`, `quote_withdrawal`, and `quote_perps_order` for unsigned quotes.

@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { GumError } from "./api";
-import { fakeApi, SOL } from "./testing";
-import { resolveToken } from "./tokens";
-import { checkLimit, waitUntil } from "./trade";
+import { EVM_KEY, fakeApi, SOL } from "./testing";
+import { isAddress, resolveToken } from "./tokens";
+import { checkLimit, checkSigner, messageBytes, waitUntil } from "./trade";
+import { evmWallet } from "./wallet";
 
 const tokens = [
     { address: SOL, chainId: 900, symbol: "SOL", verified: true },
@@ -84,16 +85,59 @@ describe("resolveToken", () => {
             "token_not_found"
         );
     });
+
+    test("never auto-selects an unverified token by symbol and checks 32-byte Solana addresses", async () => {
+        const { api: spoofed } = fakeApi({
+            "GET /tokens": () => ({
+                tokens: [
+                    {
+                        address: "0x000000000000000000000000000000000000dead",
+                        chainId: 8453,
+                        symbol: "SCAM",
+                        verified: false,
+                    },
+                ],
+            }),
+        });
+        const unverified = await errorOf(resolveToken(spoofed, "SCAM"));
+        expect(unverified.code).toBe("unverified_token");
+        expect(unverified.details).toMatchObject({
+            candidates: [{ symbol: "SCAM", verified: false }],
+        });
+
+        expect(isAddress(SOL)).toBe(true);
+        // 40-char base58 string that does not decode to 32 bytes isn't a Solana address.
+        expect(isAddress("1".repeat(40))).toBe(false);
+        expect(isAddress("a".repeat(40))).toBe(false);
+    });
 });
 
-test("checkLimit refuses over the limit, and anything it can't check against one", () => {
+test("checkLimit refuses over the limit, negative amounts, and anything it can't check against one", () => {
     expect(() => checkLimit("5", undefined)).not.toThrow();
     expect(() => checkLimit(null, undefined)).not.toThrow();
     expect(() => checkLimit("1", 1)).not.toThrow();
+    expect(() => checkLimit("0", 1)).not.toThrow();
     expect(() => checkLimit("1.5", 1)).toThrow("over the $1 limit");
+    expect(() => checkLimit("-1", 1)).toThrow("negative USD amount");
+    expect(() => checkLimit(-5, 1)).toThrow("negative USD amount");
+    expect(() => checkLimit("1", -1)).toThrow("non-negative number");
+    expect(() => checkLimit("1", Number.NaN)).toThrow("non-negative number");
     expect(() => checkLimit(null, 1)).toThrow("no USD amount");
     expect(() => checkLimit("", 1)).toThrow("no USD amount");
     expect(() => checkLimit("lots", 1)).toThrow("no USD amount");
+});
+
+test("messageBytes requires strict non-empty base64 and checkSigner rejects empty addresses", () => {
+    expect(messageBytes({ message: "aGVsbG8=" })).toEqual(
+        Uint8Array.from(Buffer.from("hello"))
+    );
+    for (const bad of ["", "   ", "not!valid", "abc"]) {
+        expect(() => messageBytes({ message: bad })).toThrow("valid base64");
+    }
+    const wallet = evmWallet(EVM_KEY);
+    expect(() => checkSigner({ address: "", signWith: "evm" }, wallet)).toThrow(
+        "must be signed by"
+    );
 });
 
 test("waitUntil polls until the field is true, or returns the latest when time runs out", async () => {

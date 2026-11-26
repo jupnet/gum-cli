@@ -27,8 +27,8 @@ export const collect = (
     positionals: string[],
     flags: Flags
 ) => {
-    const values: Values = {};
-    const options: Options = {};
+    const values = Object.create(null) as Values;
+    const options = Object.create(null) as Options;
     const set = (input: Input, value: unknown) => {
         (input.in === "cli" ? options : values)[input.field] = value;
     };
@@ -95,15 +95,28 @@ export const collect = (
 /** The request an operation takes for these values: path, query and JSON body. */
 export const requestOf = (operation: Operation, values: Values) => {
     const path = operation.route.replace(PATH_PARAM, (_, name: string) => {
-        const value = values[name];
+        const value = Object.hasOwn(values, name) ? values[name] : undefined;
         if (value === undefined || value === "") {
             throw invalid(`Missing ${name}.`);
         }
-        return encodeURIComponent(String(value));
+        const raw = String(value);
+        if (
+            raw === "." ||
+            raw === ".." ||
+            raw.includes("/") ||
+            raw.includes("\\") ||
+            raw.includes("\0")
+        ) {
+            throw invalid(`Invalid ${name}.`);
+        }
+        return encodeURIComponent(raw);
     });
     const query: Query = {};
     const body: Record<string, unknown> = {};
     for (const input of operation.inputs) {
+        if (!Object.hasOwn(values, input.field)) {
+            continue;
+        }
         const value = values[input.field];
         if (value === undefined) {
             continue;

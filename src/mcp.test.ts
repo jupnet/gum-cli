@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Context } from "./context";
 import { memoryIo } from "./io";
+import { runCommand } from "./main";
 import { createMcpHandler, respondToLine } from "./mcp";
 import { resolveSettings } from "./profile";
 import { EVM_KEY, fakeApi, tempEnv } from "./testing";
@@ -352,6 +353,133 @@ describe("MCP handler", () => {
             "POST /perps/orders",
         ]);
     });
+
+    test("whoami hides local key paths and other profiles, and reports effective maxTradeUsd", async () => {
+        const env = tempEnv();
+        await runCommand(["auth", "login", "--profile", "other"], { env });
+        await runCommand(
+            ["auth", "login", "--profile", "bot", "--max-usd", "50"],
+            {
+                env,
+            }
+        );
+        const mcpEnv = { ...env, GUM_MAX_TRADE_USD: "20" };
+        const mcpHandle = createMcpHandler(
+            contextFor(fakeApi({}).api, mcpEnv),
+            "0.0.0"
+        );
+        const res = (await mcpHandle({
+            id: 20,
+            method: "tools/call",
+            params: { arguments: {}, name: "whoami" },
+        })) as Called;
+        expect(res.result.isError).toBeUndefined();
+        const payload = JSON.parse(
+            res.result.content[0]?.text ?? "{}"
+        ) as Record<string, unknown>;
+        expect(payload).toMatchObject({
+            maxTradeUsd: 20,
+            profile: "bot",
+            source: "profile_key",
+        });
+        expect(payload).not.toHaveProperty("profiles");
+        expect(res.result.content[0]?.text).not.toContain("/keys/");
+        expect(res.result.content[0]?.text).not.toContain("other");
+
+        // When no wallet exists for the active profile, error doesn't enumerate other profiles.
+        const emptyHandle = createMcpHandler(
+            contextFor(fakeApi({}).api, { ...env, GUM_PROFILE: "empty" }),
+            "0.0.0"
+        );
+        const noWallet = (await emptyHandle({
+            id: 21,
+            method: "tools/call",
+            params: { arguments: {}, name: "whoami" },
+        })) as Called;
+        expect(noWallet.result.isError).toBe(true);
+        expect(noWallet.result.content[0]?.text).toContain("no_wallet");
+        expect(noWallet.result.content[0]?.text).not.toContain("other");
+    });
+
+    test("serializes concurrent signed tool calls", async () => {
+        const order: string[] = [];
+        let quoteNumber = 0;
+        const message = Buffer.from("perps-order-action").toString("base64");
+        const { api } = fakeApi({
+            "POST /perps/orders": async () => {
+                const n = quoteNumber;
+                order.push(`submit-start-${n}`);
+                await new Promise((resolve) => setTimeout(resolve, 15));
+                order.push(`submit-end-${n}`);
+                return {
+                    account: "gum-account",
+                    explorerUrl: null,
+                    final: false,
+                    status: "accepted",
+                    symbol: "SOL",
+                    transactionId: null,
+                    type: "perps_order",
+                };
+            },
+            "POST /perps/orders/quote": () => {
+                quoteNumber += 1;
+                order.push(`quote-${quoteNumber}`);
+                return {
+                    account: "gum-account",
+                    clientOrderId: null,
+                    expiresAt: new Date(Date.now() + 30_000).toISOString(),
+                    marginMode: "cross",
+                    message,
+                    orderType: "limit",
+                    price: "150",
+                    quantity: "1",
+                    reduceOnly: false,
+                    side: "buy",
+                    signer: { address: "gum-account", signWith: "evm" },
+                    subaccountId: 0,
+                    symbol: "SOL",
+                    timeInForce: "GoodTilCanceled",
+                    tradingAccount: "ta",
+                    transaction: "encoded-envelope",
+                    usdValue: "150",
+                };
+            },
+        });
+        const serializedHandle = createMcpHandler(
+            contextFor(
+                api,
+                tempEnv({
+                    GUM_EVM_PRIVATE_KEY: EVM_KEY,
+                    GUM_MAX_TRADE_USD: "500",
+                })
+            ),
+            "0.0.0"
+        );
+        const callOrder = (id: number) =>
+            serializedHandle({
+                id,
+                method: "tools/call",
+                params: {
+                    arguments: {
+                        orderType: "limit",
+                        price: "150",
+                        side: "buy",
+                        size: "1",
+                        symbol: "SOL",
+                    },
+                    name: "perps_place_order",
+                },
+            });
+        await Promise.all([callOrder(1), callOrder(2)]);
+        expect(order).toEqual([
+            "quote-1",
+            "submit-start-1",
+            "submit-end-1",
+            "quote-2",
+            "submit-start-2",
+            "submit-end-2",
+        ]);
+    });
 });
 
 describe("search_api and call_api", () => {
@@ -416,6 +544,15 @@ describe("search_api and call_api", () => {
         });
         expect(submit.result.isError).toBe(true);
         expect(submit.result.content[0]?.text).toContain("use_signed_command");
+
+        // body cannot smuggle path/query parameters or undeclared fields.
+        const smuggled = await call("call_api", {
+            body: { address: "evil" },
+            operationId: "getPriceHistory",
+            params: { days: 7 },
+        });
+        expect(smuggled.result.isError).toBe(true);
+        expect(smuggled.result.content[0]?.text).toContain("no body field");
     });
 });
 
@@ -434,6 +571,19 @@ describe("MCP over stdio", () => {
         ['{"jsonrpc":"2.0","id":7,"method":"ping"}', { id: 7, result: {} }],
     ])("%s", async (line, expected) => {
         expect(await respondToLine(handle, line)).toMatchObject(expected);
+    });
+
+    test("refuses oversized JSON-RPC batches", async () => {
+        const batch = JSON.stringify(
+            Array.from({ length: 21 }, (_, id) => ({
+                id,
+                jsonrpc: "2.0",
+                method: "ping",
+            }))
+        );
+        expect(await respondToLine(handle, batch)).toMatchObject({
+            error: { code: -32_600 },
+        });
     });
 
     test.each([

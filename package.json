@@ -1,6 +1,6 @@
 {
   "name": "@gumag/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "GUM (gum.ag by Jupiter) CLI & MCP server for people and AI agents: spot tokens, tokenized stocks, GUM Perps orderbooks/funding/trading, omnichain deposits & withdrawals across Solana, Base, Arbitrum, Ethereum, HyperEVM, BSC, Sui and Robinhood Chain.",
   "keywords": [
     "gum",

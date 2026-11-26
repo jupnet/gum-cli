@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { detectAgent } from "./agent";
 import { parseLine } from "./args";
-import type { Input } from "./model";
+import type { Input, Operation } from "./model";
+import { requestOf } from "./run/values";
 import { fromJson, fromText } from "./validate";
 
 const command = (argv: string[]) => {
@@ -111,10 +113,63 @@ describe("parseLine", () => {
         expect(parseLine([])).toMatchObject({ kind: "group" });
     });
 
-    test("api passes flags it doesn't know on to the operation", () => {
+    test("api passes flags it doesn't know on to the operation, including __proto__, and rejects empty flag names", () => {
         expect(
             command(["api", "getSwap", "--id", "abc", "--verbose"]).flags
         ).toEqual({ id: "abc", verbose: true });
+        const protoLine = command(["api", "listChains", "--__proto__=foo"]);
+        expect(Object.hasOwn(protoLine.flags, "__proto__")).toBe(true);
+        expect(
+            Object.getOwnPropertyDescriptor(protoLine.flags, "__proto__")?.value
+        ).toBe("foo");
+        expect(() => parseLine(["buy", "SOL", "5", "--=foo"])).toThrow(
+            "Invalid flag"
+        );
+    });
+});
+
+describe("requestOf path safety and agent header sanitization", () => {
+    const operation: Operation = {
+        description: "",
+        inputs: [
+            {
+                description: "",
+                field: "id",
+                flag: "id",
+                in: "path",
+                required: true,
+                type: "string",
+            },
+        ],
+        method: "GET",
+        operationId: "getItem",
+        route: "/items/{id}",
+        stream: false,
+        summary: "",
+    };
+
+    test("rejects dot segments, slashes, and inherited Object.prototype keys in path params", () => {
+        expect(requestOf(operation, { id: "abc-1" }).path).toBe("/items/abc-1");
+        for (const bad of [".", "..", "a/b", "a\\b", "a\0b"]) {
+            expect(() => requestOf(operation, { id: bad })).toThrow(
+                "Invalid id."
+            );
+        }
+        const protoOp: Operation = {
+            ...operation,
+            route: "/items/{toString}",
+        };
+        expect(() => requestOf(protoOp, {})).toThrow("Missing toString.");
+    });
+
+    test("sanitizes GUMAG_AGENT for safe User-Agent usage", () => {
+        expect(detectAgent({ GUMAG_AGENT: "my-agent_1.0" })).toBe(
+            "my-agent_1.0"
+        );
+        expect(detectAgent({ GUMAG_AGENT: "evil)\r\nX-Injected: yes" })).toBe(
+            "evil-X-Injected-yes"
+        );
+        expect(detectAgent({ GUMAG_AGENT: "   ()   " })).toBe("agent");
     });
 });
 

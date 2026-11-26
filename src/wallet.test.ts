@@ -68,11 +68,21 @@ describe("evmWallet", () => {
         ).toBe(wallet.address as `0x${string}`);
     });
 
-    test("takes the key with or without 0x, and nothing else", () => {
+    test("takes the key with or without 0x, and rejects out-of-range secp256k1 keys", () => {
         expect(evmWallet(EVM_KEY.slice(2)).address).toBe(
             evmWallet(EVM_KEY).address
         );
+        expect(evmWallet(`0X${EVM_KEY.slice(2)}`).address).toBe(
+            evmWallet(EVM_KEY).address
+        );
         expect(() => evmWallet("0x1234")).toThrow("32 bytes");
+        for (const bad of [
+            `0x${"0".repeat(64)}`,
+            `0x${"f".repeat(64)}`,
+            "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141",
+        ]) {
+            expect(() => evmWallet(bad)).toThrow("secp256k1");
+        }
     });
 });
 
@@ -83,10 +93,21 @@ describe("keys", () => {
             expect(wallet.kind).toBe(kind);
             expect(await wallet.sign(message)).toBeString();
         }
+        expect(() => walletOf(null as never)).toThrow("malformed");
+        expect(() => walletOf({ kind: "btc" as never, secret: "abc" })).toThrow(
+            "malformed"
+        );
+        expect(() => walletOf({ kind: "evm", secret: 123 as never })).toThrow(
+            "malformed"
+        );
     });
 
     test("an imported key is EVM when it's 32 bytes of hex, else a Solana secret", () => {
         expect(importKey(EVM_KEY.slice(2))).toEqual({
+            kind: "evm",
+            secret: EVM_KEY,
+        });
+        expect(importKey(`0X${EVM_KEY.slice(2)}`)).toEqual({
             kind: "evm",
             secret: EVM_KEY,
         });

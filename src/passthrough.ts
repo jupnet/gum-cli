@@ -122,6 +122,45 @@ const send = async (
         : context.api.post<unknown>(path, body);
 };
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+const assignBodyFields = (
+    operation: Operation,
+    rawBody: Record<string, unknown>,
+    values: Values
+) => {
+    for (const [name, value] of Object.entries(rawBody)) {
+        const input = operation.inputs.find(
+            (candidate) => candidate.field === name && candidate.in === "body"
+        );
+        if (!input) {
+            throw new GumError(
+                "invalid_request",
+                `${operation.operationId} has no body field ${name}.`
+            );
+        }
+        if (value !== undefined) {
+            values[name] = fromJson(input, value, name);
+        }
+    }
+};
+
+const checkRequiredInputs = (operation: Operation, values: Values) => {
+    const missing = operation.inputs.filter(
+        (input) =>
+            input.required &&
+            (!Object.hasOwn(values, input.field) ||
+                values[input.field] === undefined)
+    );
+    if (missing.length > 0) {
+        throw new GumError(
+            "invalid_request",
+            `${operation.operationId} needs ${missing.map((candidate) => candidate.field).join(", ")}.`
+        );
+    }
+};
+
 /** `gumag api <operationId> --<field> <value>… [--body <json|@file|@->] [--dry-run]` */
 export const callFromFlags = async (
     context: Context,
@@ -133,8 +172,10 @@ export const callFromFlags = async (
     if (body === true) {
         throw new GumError("invalid_request", "--body needs a value.");
     }
-    const values: Values =
-        typeof body === "string" ? await readBody(context, body) : {};
+    const values = Object.create(null) as Values;
+    if (typeof body === "string") {
+        assignBodyFields(operation, await readBody(context, body), values);
+    }
     for (const [flag, raw] of Object.entries(rest)) {
         const input = operation.inputs.find(
             (candidate) => candidate.flag === flag || candidate.field === flag
@@ -150,12 +191,9 @@ export const callFromFlags = async (
         }
         values[input.field] = fromText(input, raw, `--${flag}`);
     }
-    return send(
-        context,
-        operation,
-        withWallet(context, operation, values),
-        dryRun === true
-    );
+    withWallet(context, operation, values);
+    checkRequiredInputs(operation, values);
+    return send(context, operation, values, dryRun === true);
 };
 
 /** MCP's call_api: params fill path and query parameters, body is the JSON body. */
@@ -166,7 +204,14 @@ export const callFromJson = async (
     body: Record<string, unknown> = {}
 ) => {
     const operation = await findOperation(context, operationId);
-    const values: Values = { ...body };
+    if (!isPlainObject(params)) {
+        throw new GumError("invalid_request", "params must be an object.");
+    }
+    if (!isPlainObject(body)) {
+        throw new GumError("invalid_request", "body must be an object.");
+    }
+    const values = Object.create(null) as Values;
+    assignBodyFields(operation, body, values);
     for (const [name, value] of Object.entries(params)) {
         const input = operation.inputs.find(
             (candidate) => candidate.field === name && candidate.in !== "body"
@@ -177,15 +222,14 @@ export const callFromJson = async (
                 `${operation.operationId} has no parameter ${name}.`
             );
         }
-        values[name] =
-            typeof value === "string"
-                ? fromText(input, value, name)
-                : fromJson(input, value, name);
+        if (value !== undefined) {
+            values[name] =
+                typeof value === "string"
+                    ? fromText(input, value, name)
+                    : fromJson(input, value, name);
+        }
     }
-    return send(
-        context,
-        operation,
-        withWallet(context, operation, values),
-        false
-    );
+    withWallet(context, operation, values);
+    checkRequiredInputs(operation, values);
+    return send(context, operation, values, false);
 };

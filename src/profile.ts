@@ -1,14 +1,18 @@
+import { randomBytes } from "node:crypto";
 import {
+    chmodSync,
     existsSync,
+    linkSync,
     mkdirSync,
     readFileSync,
     renameSync,
+    unlinkSync,
     writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Env } from "./agent";
-import { GumError, NETWORKS, type Network } from "./api";
+import { GumError, NETWORKS, type Network, validateApiUrl } from "./api";
 import { type StoredWallet, type Wallet, walletOf } from "./wallet";
 
 // Profiles live in $XDG_CONFIG_HOME/gum (else ~/.config/gum):
@@ -43,45 +47,90 @@ export const configDirOf = (env: Env) =>
 
 const configPathOf = (dir: string) => join(dir, "config.json");
 export const keyPathOf = (dir: string, profile: string) =>
-    join(dir, "keys", `${profile}.json`);
+    join(dir, "keys", `${checkProfileName(profile)}.json`);
 const legacyPathOf = (dir: string) => join(dir, "wallet.json");
 
 const isNetwork = (value: unknown): value is Network =>
     typeof value === "string" && Object.hasOwn(NETWORKS, value);
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
 /** No prototype, so a name like "constructor" is never taken for a saved profile. */
-const profileMap = (profiles: unknown): Config["profiles"] =>
-    Object.assign(
-        Object.create(null) as Config["profiles"],
-        typeof profiles === "object" && profiles !== null ? profiles : {}
-    );
+const profileMap = (profiles: Record<string, Profile>): Config["profiles"] =>
+    Object.assign(Object.create(null) as Config["profiles"], profiles);
 
 export const readConfig = (dir: string): Config => {
     const path = configPathOf(dir);
     if (!existsSync(path)) {
         return { profiles: profileMap({}) };
     }
-    let parsed: { profile?: unknown; profiles?: unknown };
+    let parsed: unknown;
     try {
-        parsed = JSON.parse(readFileSync(path, "utf8")) as typeof parsed;
+        parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
     } catch (error) {
         throw new GumError("invalid_config", `Couldn't read ${path}.`, {
             cause: error,
         });
     }
+    if (!isPlainObject(parsed)) {
+        throw new GumError(
+            "invalid_config",
+            `Invalid config in ${path}: expected a JSON object.`
+        );
+    }
+    if (parsed.profile !== undefined && typeof parsed.profile !== "string") {
+        throw new GumError(
+            "invalid_config",
+            `Invalid profile in ${path}: expected a string.`
+        );
+    }
+    if (parsed.profiles !== undefined && !isPlainObject(parsed.profiles)) {
+        throw new GumError(
+            "invalid_config",
+            `Invalid profiles in ${path}: expected a JSON object.`
+        );
+    }
+    const profiles = Object.create(null) as Config["profiles"];
+    for (const [name, entry] of Object.entries(parsed.profiles ?? {})) {
+        if (!isPlainObject(entry)) {
+            throw new GumError(
+                "invalid_config",
+                `Profile ${name} in ${path} must be a JSON object.`
+            );
+        }
+        profiles[name] = entry as Profile;
+    }
     return {
         ...(typeof parsed.profile === "string"
             ? { profile: parsed.profile }
             : {}),
-        profiles: profileMap(parsed.profiles),
+        profiles,
     };
 };
 
 export const writeConfig = (dir: string, config: Config) => {
     mkdirSync(dir, { mode: 0o700, recursive: true });
-    writeFileSync(configPathOf(dir), `${JSON.stringify(config, null, 2)}\n`, {
-        mode: 0o600,
-    });
+    chmodSync(dir, 0o700);
+    const tmp = join(
+        dir,
+        `.config.${process.pid}.${randomBytes(4).toString("hex")}.tmp`
+    );
+    try {
+        writeFileSync(tmp, `${JSON.stringify(config, null, 2)}\n`, {
+            flag: "wx",
+            mode: 0o600,
+        });
+        chmodSync(tmp, 0o600);
+        renameSync(tmp, configPathOf(dir));
+    } catch (error) {
+        try {
+            unlinkSync(tmp);
+        } catch {
+            // Best-effort cleanup of temp file.
+        }
+        throw error;
+    }
 };
 
 export const checkProfileName = (name: string) => {
@@ -98,7 +147,9 @@ export const checkProfileName = (name: string) => {
 const endpointOf = (
     env: Env,
     flag: string | undefined,
-    entry: Profile
+    entry: Profile,
+    profile: string,
+    dir: string
 ): { apiUrl: string; network: Settings["network"] } => {
     if (flag !== undefined) {
         if (!isNetwork(flag)) {
@@ -111,15 +162,28 @@ const endpointOf = (
     }
     const fromEnv = env.GUM_API_URL;
     if (fromEnv) {
+        const apiUrl = validateApiUrl(fromEnv);
         const known = (Object.keys(NETWORKS) as Network[]).find(
-            (name) => NETWORKS[name] === fromEnv
+            (name) => NETWORKS[name] === apiUrl
         );
-        return { apiUrl: fromEnv, network: known ?? "custom" };
+        return { apiUrl, network: known ?? "custom" };
     }
-    if (entry.apiUrl) {
-        return { apiUrl: entry.apiUrl, network: "custom" };
+    if (entry.apiUrl !== undefined) {
+        if (typeof entry.apiUrl !== "string" || entry.apiUrl.trim() === "") {
+            throw new GumError(
+                "invalid_config",
+                `Profile ${profile}'s apiUrl in ${configPathOf(dir)} must be a valid URL.`
+            );
+        }
+        return { apiUrl: validateApiUrl(entry.apiUrl), network: "custom" };
     }
-    const network = isNetwork(entry.network) ? entry.network : "mainnet";
+    if (entry.network !== undefined && !isNetwork(entry.network)) {
+        throw new GumError(
+            "invalid_config",
+            `Profile ${profile}'s network in ${configPathOf(dir)} must be mainnet or devnet.`
+        );
+    }
+    const network = entry.network ?? "mainnet";
     return { apiUrl: NETWORKS[network], network };
 };
 
@@ -156,7 +220,13 @@ export const resolveSettings = (
         flags.profile || env.GUM_PROFILE || config.profile || "default"
     );
     const entry = config.profiles[profile] ?? {};
-    const { apiUrl, network } = endpointOf(env, flags.network, entry);
+    const { apiUrl, network } = endpointOf(
+        env,
+        flags.network,
+        entry,
+        profile,
+        configDir
+    );
     const profileMaxUsd = savedLimitOf(entry, profile, configDir);
     return {
         apiUrl,
@@ -237,24 +307,48 @@ export const saveKey = (settings: Settings, stored: StoredWallet) => {
     }
     const path = keyPathOf(settings.configDir, settings.profile);
     mkdirSync(dirname(path), { mode: 0o700, recursive: true });
+    chmodSync(settings.configDir, 0o700);
+    chmodSync(dirname(path), 0o700);
     writeFileSync(path, `${JSON.stringify(stored, null, 2)}\n`, {
         flag: "wx",
         mode: 0o600,
     });
+    chmodSync(path, 0o600);
     return path;
 };
 
-/** Moves the profile's key files to keys/archive. Keys are never deleted. */
+const moveWithoutOverwrite = (source: string, target: string) => {
+    try {
+        linkSync(source, target);
+        chmodSync(target, 0o600);
+        unlinkSync(source);
+    } catch (error) {
+        const { code } = error as NodeJS.ErrnoException;
+        if (code === "EXDEV" || code === "EPERM") {
+            if (existsSync(target)) {
+                throw error;
+            }
+            renameSync(source, target);
+            chmodSync(target, 0o600);
+            return;
+        }
+        throw error;
+    }
+};
+
+/** Moves the profile's key files to keys/archive. Keys are never deleted or overwritten. */
 export const archiveKeys = (settings: Settings) => {
     const archive = join(settings.configDir, "keys", "archive");
     const stamp = new Date().toISOString().replaceAll(":", "-");
     return keyFilesOf(settings).map((path, index) => {
         mkdirSync(archive, { mode: 0o700, recursive: true });
+        chmodSync(archive, 0o700);
+        const nonce = randomBytes(6).toString("hex");
         const target = join(
             archive,
-            `${settings.profile}-${stamp}${index > 0 ? `-${index}` : ""}.json`
+            `${settings.profile}-${stamp}-${nonce}${index > 0 ? `-${index}` : ""}.json`
         );
-        renameSync(path, target);
+        moveWithoutOverwrite(path, target);
         return target;
     });
 };

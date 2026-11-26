@@ -6,6 +6,7 @@ import { liveOnlyOperations } from "./live";
 import type { Command, Input, Operation } from "./model";
 import { callFromJson } from "./passthrough";
 import { perpsClose } from "./perps";
+import { limitOf } from "./profile";
 import { runGenerated } from "./run";
 import type { Options, Values } from "./run/values";
 import { rank } from "./search";
@@ -18,9 +19,10 @@ import { fromJson, jsonSchemaOf } from "./validate";
 // it. Small enough to own, which keeps `npx @gumag/cli mcp` quick to start.
 
 const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
+const MAX_BATCH = 20;
 
 const INSTRUCTIONS =
-    "GUM spot and perpetual futures trading with the wallet this server holds. Call whoami first. Amounts are decimal strings: USD for spot buys, tokens for spot sells, and base units (or USD with sizeCurrency='USD') for GUM Perps. Use list_perps_markets, get_perps_orderbook, get_perps_funding_history and get_perps_account to inspect perpetual markets and positions. Signed write tools (trade, withdraw, perps_place_order, perps_close_position, perps_cancel_order, perps_deposit, perps_withdraw, perps_set_leverage) move real funds or orders: they need a USD limit on the server (GUM_MAX_TRADE_USD or the profile's), and dryRun checks one end to end without executing. search_api and call_api reach any other read-only endpoint, including ones newer than this server.";
+    "GUM spot and perpetual futures trading with the wallet this server holds. Call whoami first. Amounts are decimal strings: USD for spot buys, tokens for spot sells, and base units (or USD with sizeCurrency='USD') for GUM Perps. Use list_perps_markets, get_perps_orderbook, get_perps_funding_history and get_perps_account to inspect perpetual markets and positions. Signed write tools (trade, withdraw, perps_place_order, perps_close_position, perps_cancel_order, perps_deposit, perps_withdraw, perps_set_leverage) move real funds or orders: they need a USD limit on the server (GUM_MAX_TRADE_USD or the profile's), including dryRun which signs and verifies without executing. Use quote tools for unsigned quotes. search_api and call_api reach any other read-only endpoint, including ones newer than this server.";
 
 type ToolAnnotations = {
     destructiveHint?: boolean;
@@ -34,6 +36,7 @@ export type Tool = {
     inputs: Input[];
     name: string;
     run: (values: Values) => Promise<unknown>;
+    signed?: boolean;
 };
 
 const input = (
@@ -55,7 +58,7 @@ export const argumentsOf = (tool: Tool, args: unknown): Values => {
     if (typeof args !== "object" || args === null || Array.isArray(args)) {
         throw new GumError("invalid_request", "Arguments must be an object.");
     }
-    const values: Values = {};
+    const values = Object.create(null) as Values;
     for (const [name, value] of Object.entries(args)) {
         const known = tool.inputs.find((candidate) => candidate.field === name);
         if (!known) {
@@ -70,7 +73,9 @@ export const argumentsOf = (tool: Tool, args: unknown): Values => {
     }
     const missing = tool.inputs.filter(
         (candidate) =>
-            candidate.required && values[candidate.field] === undefined
+            candidate.required &&
+            (!Object.hasOwn(values, candidate.field) ||
+                values[candidate.field] === undefined)
     );
     if (missing.length > 0) {
         throw new GumError(
@@ -125,6 +130,34 @@ const generatedTool = (command: Command, context: Context): Tool | null => {
                 : {};
             return runGenerated(command, context, fields, options);
         },
+        ...(signed ? { signed: true } : {}),
+    };
+};
+
+const mcpWhoami = (context: Context) => {
+    let status: ReturnType<typeof authStatus>;
+    try {
+        status = authStatus(context);
+    } catch (error) {
+        if (error instanceof GumError && error.code === "no_wallet") {
+            throw new GumError(error.code, error.message);
+        }
+        throw error;
+    }
+    const source =
+        status.source === "GUM_SOLANA_SECRET_KEY" ||
+        status.source === "GUM_EVM_PRIVATE_KEY"
+            ? status.source
+            : "profile_key";
+    const effectiveLimit = limitOf(undefined, context.env, context.settings);
+    return {
+        address: status.address,
+        apiUrl: status.apiUrl,
+        kind: status.kind,
+        maxTradeUsd: effectiveLimit ?? null,
+        network: status.network,
+        profile: status.profile,
+        source,
     };
 };
 
@@ -150,7 +183,7 @@ export const createTools = (context: Context): Tool[] => [
             "The wallet this server trades with: its address, Solana or EVM, the profile and its USD limit. Call this first; the other tools default to this wallet.",
         inputs: [],
         name: "whoami",
-        run: () => Promise.resolve(authStatus(context)),
+        run: () => Promise.resolve(mcpWhoami(context)),
     },
     ...TRADING_API.commands.flatMap((command) => {
         const tool = generatedTool(command, context);
@@ -206,6 +239,7 @@ export const createTools = (context: Context): Tool[] => [
                 requireLimit: true,
                 yes: true,
             }),
+        signed: true,
     },
     {
         annotations: { readOnlyHint: true },
@@ -295,6 +329,15 @@ const failure = (id: Request["id"], code: number, message: string) => ({
 /** Answers one JSON-RPC message; null for notifications, which get no reply. */
 export const createMcpHandler = (context: Context, version: string) => {
     const tools = createTools(context);
+    let signingQueue: Promise<void> = Promise.resolve();
+    const serializeSigned = <T>(work: () => Promise<T>): Promise<T> => {
+        const next = signingQueue.then(work, work);
+        signingQueue = next.then(
+            () => undefined,
+            () => undefined
+        );
+        return next;
+    };
     return async (message: Request) => {
         if (message.id === undefined || message.id === null) {
             return null;
@@ -339,7 +382,10 @@ export const createMcpHandler = (context: Context, version: string) => {
             }
             try {
                 const values = argumentsOf(tool, params?.arguments ?? {});
-                return result(id, reply(await tool.run(values)));
+                const output = tool.signed
+                    ? await serializeSigned(() => tool.run(values))
+                    : await tool.run(values);
+                return result(id, reply(output));
             } catch (error) {
                 return result(id, {
                     ...reply(toErrorBody(error)),
@@ -401,29 +447,43 @@ export const respondToLine = async (
     if (message.length === 0) {
         return failure(null, -32_600, "Invalid Request");
     }
+    if (message.length > MAX_BATCH) {
+        return failure(
+            null,
+            -32_600,
+            `Batch size exceeds maximum of ${MAX_BATCH}.`
+        );
+    }
     const answers = (await Promise.all(message.map(answer))).filter(
         (response) => response !== null
     );
     return answers.length > 0 ? answers : null;
 };
 
-/** Serves MCP on stdin/stdout until stdin closes. Nothing else may write to stdout. */
+/** Serves MCP on stdin/stdout until stdin closes and all in-flight calls finish. Nothing else may write to stdout. */
 export const runMcpServer = (context: Context, version: string) => {
     const handle = createMcpHandler(context, version);
     const lines = createInterface({ input: process.stdin });
+    const pending = new Set<Promise<void>>();
     lines.on("line", (line) => {
         if (!line.trim()) {
             return;
         }
-        respondToLine(handle, line)
+        const task = respondToLine(handle, line)
             .then((response) => {
                 if (response !== null) {
                     process.stdout.write(`${JSON.stringify(response)}\n`);
                 }
             })
-            .catch(() => null);
+            .catch(() => undefined)
+            .finally(() => {
+                pending.delete(task);
+            });
+        pending.add(task);
     });
     return new Promise<void>((resolve) => {
-        lines.on("close", resolve);
+        lines.on("close", () => {
+            Promise.allSettled([...pending]).then(() => resolve());
+        });
     });
 };

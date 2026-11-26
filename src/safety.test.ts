@@ -229,14 +229,95 @@ describe("signing", () => {
         expect(submitted(capped.calls)).toBe(0);
     });
 
-    test("with a limit set, a quote without usdValue is never signed", async () => {
-        const { api, calls } = swapRoutes(() => quote({ usdValue: null }));
-        const result = await runCommand(
-            ["sell", "SOL", "1", "--yes", "--max-usd", "10"],
-            { api, env: env() }
+    test("with a limit set, a quote without usdValue or with a negative usdValue is never signed", async () => {
+        for (const usdValue of [null, "-5", "-0.01"]) {
+            const { api, calls } = swapRoutes(() => quote({ usdValue }));
+            const result = await runCommand(
+                ["sell", "SOL", "1", "--yes", "--max-usd", "10"],
+                { api, env: env() }
+            );
+            expect(result.output).toMatchObject({
+                error: { code: "over_limit" },
+            });
+            expect(submitted(calls)).toBe(0);
+        }
+    });
+
+    test("a quote with invalid base64 message or empty signer address is refused", async () => {
+        const badMessage = swapRoutes(() => quote({ message: "not!base64" }));
+        expect(
+            (
+                await runCommand(["buy", "SOL", "5", "--yes"], {
+                    api: badMessage.api,
+                    env: env(),
+                })
+            ).output
+        ).toMatchObject({ error: { code: "invalid_response" } });
+        expect(submitted(badMessage.calls)).toBe(0);
+
+        const emptySigner = swapRoutes(() =>
+            quote({ signer: { address: "  ", signWith: "evm" } })
         );
-        expect(result.output).toMatchObject({ error: { code: "over_limit" } });
-        expect(submitted(calls)).toBe(0);
+        expect(
+            (
+                await runCommand(["buy", "SOL", "5", "--yes"], {
+                    api: emptySigner.api,
+                    env: env(),
+                })
+            ).output
+        ).toMatchObject({ error: { code: "signer_mismatch" } });
+        expect(submitted(emptySigner.calls)).toBe(0);
+    });
+
+    test("no-wait rejects a malformed submit response without an operation ID", async () => {
+        for (const badSubmit of [null, {}, { id: "  " }]) {
+            const { api } = fakeApi({
+                "GET /tokens": () => ({
+                    tokens: [
+                        {
+                            address: SOL,
+                            chainId: 900,
+                            symbol: "SOL",
+                            verified: true,
+                        },
+                    ],
+                }),
+                "POST /swap": () => badSubmit,
+                "POST /swap/quote": () => quote(),
+            });
+            const result = await runCommand(
+                ["buy", "SOL", "5", "--yes", "--no-wait"],
+                { api, env: env() }
+            );
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toMatchObject({
+                error: {
+                    code: "invalid_response",
+                    details: {
+                        retrySubmission: false,
+                        submissionUnknown: true,
+                    },
+                },
+            });
+        }
+    });
+
+    test("interactive confirmation warns on plaintext http://api.gum.ag", async () => {
+        const routes = swapRoutes();
+        const plaintextGum = {
+            ...routes.api,
+            baseUrl: "http://api.gum.ag/app/v1",
+        };
+        const io = memoryIo({
+            confirm: () => Promise.resolve(false),
+            terminal: true,
+        });
+        await runCommand(["buy", "SOL", "5"], {
+            api: plaintextGum,
+            env: env(),
+            io,
+        });
+        expect(io.err.join("")).toContain("Warning: api.gum.ag isn't gum.ag.");
     });
 
     test("a quote meant for another signer is refused", async () => {
@@ -486,7 +567,7 @@ describe("MCP signing", () => {
     };
     const args = { amount: "5", side: "buy", token: "SOL" };
 
-    test("trade needs a USD limit on the server; a dry run doesn't", async () => {
+    test("trade needs a USD limit on the server, including dry runs", async () => {
         const capped = call(env({ GUM_MAX_TRADE_USD: "10" }), args);
         expect((await capped.response).result.isError).toBeUndefined();
         expect(submitted(capped.calls)).toBe(1);
@@ -497,13 +578,32 @@ describe("MCP signing", () => {
         expect(refused.result.content[0]?.text).toContain("limit_required");
         expect(open.calls).toHaveLength(0);
 
-        const dry = call(env(), { ...args, dryRun: true });
-        expect((await dry.response).result.isError).toBeUndefined();
+        // dryRun still signs locally, so it must also require a configured USD limit.
+        const openDry = call(env(), { ...args, dryRun: true });
+        const refusedDry = await openDry.response;
+        expect(refusedDry.result.isError).toBe(true);
+        expect(refusedDry.result.content[0]?.text).toContain("limit_required");
+        expect(openDry.calls).toHaveLength(0);
+
+        const cappedDry = call(env({ GUM_MAX_TRADE_USD: "10" }), {
+            ...args,
+            dryRun: true,
+        });
+        expect((await cappedDry.response).result.isError).toBeUndefined();
         expect(
-            dry.calls.find((entry) => entry.path === "/swap")?.body
+            cappedDry.calls.find((entry) => entry.path === "/swap")?.body
         ).toMatchObject({
             dryRun: true,
         });
+
+        const overLimitDry = call(env({ GUM_MAX_TRADE_USD: "1" }), {
+            ...args,
+            dryRun: true,
+        });
+        const refusedOverDry = await overLimitDry.response;
+        expect(refusedOverDry.result.isError).toBe(true);
+        expect(refusedOverDry.result.content[0]?.text).toContain("over_limit");
+        expect(submitted(overLimitDry.calls)).toBe(0);
     });
 
     test("an argument the tool doesn't have (dry_run) is refused with zero calls", async () => {

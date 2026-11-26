@@ -11,6 +11,62 @@ const TRAILING_SLASHES = /\/+$/;
 const LINE_BREAK = /\r?\n/;
 const REQUEST_TIMEOUT_MS = 30_000;
 
+const hasControlChar = (value: string) => {
+    for (let i = 0; i < value.length; i += 1) {
+        const code = value.charCodeAt(i);
+        if (code < 0x20 || code === 0x7f) {
+            return true;
+        }
+    }
+    return false;
+};
+
+export const isLoopbackHost = (hostname: string) =>
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]" ||
+    hostname === "::1";
+
+/**
+ * Validates an API base URL: HTTPS is required everywhere except loopback
+ * (localhost, 127.0.0.1, ::1), with no embedded credentials, query or fragment.
+ */
+export const validateApiUrl = (rawUrl: string): string => {
+    const trimmed = rawUrl.trim();
+    let parsed: URL;
+    try {
+        parsed = new URL(trimmed);
+    } catch (error) {
+        throw new GumError(
+            "invalid_config",
+            "API URL must be a valid https:// URL (or http:// on localhost).",
+            { cause: error }
+        );
+    }
+    if (parsed.username || parsed.password) {
+        throw new GumError(
+            "invalid_config",
+            "API URL must not contain embedded credentials."
+        );
+    }
+    if (parsed.search || parsed.hash) {
+        throw new GumError(
+            "invalid_config",
+            "API URL must not include a query string or fragment."
+        );
+    }
+    const allowedScheme =
+        parsed.protocol === "https:" ||
+        (parsed.protocol === "http:" && isLoopbackHost(parsed.hostname));
+    if (!allowedScheme) {
+        throw new GumError(
+            "invalid_config",
+            "API URL must use https:// (http:// is only allowed on localhost)."
+        );
+    }
+    return trimmed.replace(TRAILING_SLASHES, "");
+};
+
 /**
  * Every failure the CLI reports: the API's own `{ code, message, details }`,
  * or one of the CLI's (network_error, no_wallet, ambiguous_token, …).
@@ -123,7 +179,9 @@ export const createApi = (
     fetchImpl: typeof fetch = fetch,
     { userAgent = "gumag" }: { userAgent?: string } = {}
 ): Api => {
-    const root = baseUrl.replace(TRAILING_SLASHES, "");
+    const root = validateApiUrl(baseUrl);
+    const rootUrl = new URL(root);
+    const rootPrefix = rootUrl.pathname === "/" ? "" : rootUrl.pathname;
 
     const send = async (
         method: "GET" | "POST",
@@ -135,7 +193,25 @@ export const createApi = (
             signal?: AbortSignal;
         }
     ) => {
+        if (
+            !path.startsWith("/") ||
+            path.startsWith("//") ||
+            path.includes("?") ||
+            path.includes("#") ||
+            path.includes("\\") ||
+            hasControlChar(path)
+        ) {
+            throw new GumError("invalid_request", `Invalid API path: ${path}`);
+        }
         const url = new URL(`${root}${path}`);
+        if (
+            url.origin !== rootUrl.origin ||
+            (rootPrefix !== "" &&
+                url.pathname !== rootPrefix &&
+                !url.pathname.startsWith(`${rootPrefix}/`))
+        ) {
+            throw new GumError("invalid_request", `Invalid API path: ${path}`);
+        }
         for (const [key, value] of Object.entries(init.query ?? {})) {
             if (value !== undefined && value !== "") {
                 url.searchParams.set(key, String(value));
@@ -157,6 +233,7 @@ export const createApi = (
                         : JSON.stringify(init.body),
                 headers,
                 method,
+                redirect: "error",
                 signal: init.signal,
             });
         } catch (error) {

@@ -1,4 +1,12 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash, randomBytes } from "node:crypto";
+import {
+    chmodSync,
+    mkdirSync,
+    readFileSync,
+    renameSync,
+    unlinkSync,
+    writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Env } from "./agent";
@@ -10,27 +18,42 @@ import { TRADING_API } from "./tree";
 // The live spec, for operations the API gained after this build: `gumag
 // api`, `gumag cli search` and MCP's search_api/call_api read it. Cached in
 // memory and, for https APIs, on disk for ten minutes; a stale copy beats
-// none when the API can't be reached.
+// none when the API can't be reached (bounded to 24 hours).
 
 const FRESH_MS = 10 * 60 * 1000;
-const NOT_WORD = /[^a-z0-9]+/gi;
+const MAX_STALE_MS = 24 * 60 * 60 * 1000;
 
 type Entry = { at: number; spec: Spec };
 
 const memory = new WeakMap<Api, Entry>();
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isFresh = (at: number, current: number) =>
+    at <= current && current - at < FRESH_MS;
+
+const isUsableStale = (at: number, current: number) =>
+    at <= current && current - at < MAX_STALE_MS;
+
 export const cacheFileOf = (env: Env, baseUrl: string) =>
     join(
         env.XDG_CACHE_HOME || join(homedir(), ".cache"),
         "gumag",
-        `${baseUrl.replace(NOT_WORD, "_").slice(0, 120)}.json`
+        `${createHash("sha256").update(baseUrl).digest("hex")}.json`
     );
 
 const readDisk = (path: string): Entry | null => {
     try {
-        const entry = JSON.parse(readFileSync(path, "utf8")) as Entry;
-        return typeof entry.at === "number" && typeof entry.spec === "object"
-            ? entry
+        const entry = JSON.parse(readFileSync(path, "utf8")) as unknown;
+        if (!isPlainObject(entry)) {
+            return null;
+        }
+        const { at, spec } = entry;
+        return typeof at === "number" &&
+            Number.isFinite(at) &&
+            isPlainObject(spec)
+            ? { at, spec: spec as Spec }
             : null;
     } catch {
         return null;
@@ -38,11 +61,23 @@ const readDisk = (path: string): Entry | null => {
 };
 
 const writeDisk = (path: string, entry: Entry) => {
+    const dir = dirname(path);
+    const tmp = join(
+        dir,
+        `.spec.${process.pid}.${randomBytes(4).toString("hex")}.tmp`
+    );
     try {
-        mkdirSync(dirname(path), { recursive: true });
-        writeFileSync(path, JSON.stringify(entry));
+        mkdirSync(dir, { mode: 0o700, recursive: true });
+        chmodSync(dir, 0o700);
+        writeFileSync(tmp, JSON.stringify(entry), { flag: "wx", mode: 0o600 });
+        chmodSync(tmp, 0o600);
+        renameSync(tmp, path);
     } catch {
-        // A cache that can't be written only costs a fetch next time.
+        try {
+            unlinkSync(tmp);
+        } catch {
+            // A cache that can't be written only costs a fetch next time.
+        }
     }
 };
 
@@ -51,14 +86,15 @@ export const loadLiveSpec = async (
     env: Env,
     { now = Date.now, timeoutMs = 5000 } = {}
 ): Promise<Spec> => {
+    const current = now();
     const cached = memory.get(api);
-    if (cached && now() - cached.at < FRESH_MS) {
+    if (cached && isFresh(cached.at, current)) {
         return cached.spec;
     }
     const persist = api.baseUrl.startsWith("https://");
     const path = cacheFileOf(env, api.baseUrl);
     const disk = persist ? readDisk(path) : null;
-    if (disk && now() - disk.at < FRESH_MS) {
+    if (disk && isFresh(disk.at, current)) {
         memory.set(api, disk);
         return disk.spec;
     }
@@ -66,6 +102,12 @@ export const loadLiveSpec = async (
         const spec = await api.get<Spec>("/openapi.json", undefined, {
             timeoutMs,
         });
+        if (!isPlainObject(spec)) {
+            throw new GumError(
+                "invalid_response",
+                "GET /openapi.json didn't return a JSON object."
+            );
+        }
         const entry = { at: now(), spec };
         memory.set(api, entry);
         if (persist) {
@@ -73,7 +115,9 @@ export const loadLiveSpec = async (
         }
         return spec;
     } catch (error) {
-        const stale = disk ?? cached;
+        const stale =
+            (disk && isUsableStale(disk.at, now()) ? disk : null) ??
+            (cached && isUsableStale(cached.at, now()) ? cached : null);
         if (stale) {
             return stale.spec;
         }

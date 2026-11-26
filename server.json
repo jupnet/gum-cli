@@ -3,7 +3,7 @@
   "name": "io.github.jupnet/gum-cli",
   "title": "GUM Trading CLI & MCP",
   "description": "Trade spot tokens, tokenized stocks, and up to 50x perps across chains on GUM by Jupiter.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "websiteUrl": "https://docs.gum.ag/trading-api/cli",
   "icons": [
     {
@@ -20,7 +20,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@gumag/cli",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "runtimeHint": "npx",
       "packageArguments": [
         {

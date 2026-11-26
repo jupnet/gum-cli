@@ -48,9 +48,11 @@ const flagToken = (token: string): FlagToken | null => {
     }
     const body = token.slice(2);
     const equals = body.indexOf("=");
-    return equals >= 0
-        ? { name: body.slice(0, equals), value: body.slice(equals + 1) }
-        : { name: body };
+    const name = equals >= 0 ? body.slice(0, equals) : body;
+    if (name === "") {
+        throw invalid(`Invalid flag ${token}.`);
+    }
+    return equals >= 0 ? { name, value: body.slice(equals + 1) } : { name };
 };
 
 const switchValue = (name: string, value: string | undefined) => {
@@ -184,18 +186,29 @@ const readCommand = (reader: Reader, command: AnyCommand): Line => {
             }
             reader.mark(parsed.name);
             const next = reader.peek();
-            flags[parsed.name] =
+            const value =
                 parsed.value ??
                 (next !== undefined && !next.startsWith("--")
                     ? (reader.next() ?? true)
                     : true);
+            Object.defineProperty(flags, parsed.name, {
+                configurable: true,
+                enumerable: true,
+                value,
+                writable: true,
+            });
             continue;
         }
         reader.mark(parsed.name);
-        flags[parsed.name] =
-            input.type === "boolean"
-                ? switchValue(parsed.name, parsed.value)
-                : reader.valueFor(parsed.name, parsed);
+        Object.defineProperty(flags, parsed.name, {
+            configurable: true,
+            enumerable: true,
+            value:
+                input.type === "boolean"
+                    ? switchValue(parsed.name, parsed.value)
+                    : reader.valueFor(parsed.name, parsed),
+            writable: true,
+        });
     }
     return {
         command,

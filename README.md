@@ -43,9 +43,10 @@ npx skills add jupnet/gum-cli
 - Signing commands stop with `confirmation_required` (and the quote) unless
   `--yes` when nobody is at the terminal, and never sign above the lowest of
   `--max-usd`, `GUM_MAX_TRADE_USD` and the profile's limit.
-- Use `swaps quote` or `withdrawals quote` for prices without signing.
-  `--dry-run` on a signing command still signs and sends the signature for
-  validation; it does not execute the trade or withdrawal.
+- Use `swaps quote`, `withdrawals quote`, or `perps orders quote` for prices
+  without signing. `--dry-run` (or MCP `dryRun: true`) on a signing command
+  still signs locally and sends the signature for validation without executing
+  (over MCP, a USD limit is still required).
 - If submission succeeds but status polling fails, `status_unavailable` retains
   the accepted ID, initial status, original error, and a read-only command in
   `error.details.recovery.command`. Keep the same environment when running it.
@@ -59,6 +60,11 @@ npx skills add jupnet/gum-cli
   transactions that API builds, so point it only at an API you trust.
 - The MCP server is hand-written JSON-RPC over stdio rather than the MCP SDK,
   so `npx` installs two small dependencies and starts fast.
+
+## Security
+
+See [SECURITY.md](./SECURITY.md) for the local-signing security model and how to
+report vulnerabilities privately.
 
 ## License
 

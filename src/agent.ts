@@ -15,8 +15,20 @@ const AGENT_VARIABLES: [string, string][] = [
     ["OPENCODE_CLIENT", "opencode"],
 ];
 
+const UNSAFE_AGENT_CHARS = /[^a-zA-Z0-9._-]+/g;
+const EDGE_DASHES = /^-+|-+$/g;
+
 const isSet = (value: string | undefined) =>
     value !== undefined && value !== "" && value !== "0" && value !== "false";
+
+const sanitizeAgent = (raw: string) => {
+    const cleaned = raw
+        .trim()
+        .replace(UNSAFE_AGENT_CHARS, "-")
+        .replace(EDGE_DASHES, "")
+        .slice(0, 64);
+    return cleaned || "agent";
+};
 
 /** The coding agent running this command, or null for a person or a script. */
 export const detectAgent = (env: Env): string | null => {
@@ -25,7 +37,9 @@ export const detectAgent = (env: Env): string | null => {
         return null;
     }
     if (isSet(forced)) {
-        return forced === "1" || forced === "true" ? "agent" : (forced ?? null);
+        return forced === "1" || forced === "true"
+            ? "agent"
+            : sanitizeAgent(forced ?? "");
     }
     for (const [name, agent] of AGENT_VARIABLES) {
         if (isSet(env[name])) {

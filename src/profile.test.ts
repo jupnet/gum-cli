@@ -10,7 +10,7 @@ import {
 import { join } from "node:path";
 import { memoryIo } from "./io";
 import { runCommand } from "./main";
-import { configDirOf, limitOf, resolveSettings } from "./profile";
+import { configDirOf, keyPathOf, limitOf, resolveSettings } from "./profile";
 import { EVM_KEY, tempEnv } from "./testing";
 import { evmWallet, newKey } from "./wallet";
 
@@ -152,7 +152,7 @@ describe("auth login", () => {
         ).toMatchObject({ output: { error: { code: "invalid_key" } } });
     });
 
-    test("logout moves the key to keys/archive instead of deleting it", async () => {
+    test("logout moves the key to keys/archive with unique names and 0600 permissions", async () => {
         const env = tempEnv();
         const login = await runCommand(["auth", "login"], { env });
         const { saved } = login.output as { saved: string };
@@ -161,6 +161,13 @@ describe("auth login", () => {
         expect(existsSync(saved)).toBe(false);
         const archive = join(configDirOf(env), "keys", "archive");
         expect(readdirSync(archive)).toHaveLength(1);
+        const firstArchived = (logout.output as { archived: string[] })
+            .archived[0] as string;
+        expect(statSync(firstArchived).mode & 0o777).toBe(0o600);
+        // Logging in and out again immediately never overwrites the previous archive.
+        await runCommand(["auth", "login"], { env });
+        await runCommand(["auth", "logout"], { env });
+        expect(readdirSync(archive)).toHaveLength(2);
         expect(
             (await runCommand(["auth", "status"], { env })).output
         ).toMatchObject({ error: { code: "no_wallet" } });
@@ -316,4 +323,43 @@ describe("profile names and saved limits", () => {
             });
         }
     );
+
+    test.each([
+        "null",
+        "[]",
+        '"broken"',
+        JSON.stringify({ profiles: null }),
+        JSON.stringify({ profiles: [] }),
+        JSON.stringify({ profile: 42, profiles: {} }),
+        JSON.stringify({ profile: "bot", profiles: { bot: null } }),
+        JSON.stringify({ profile: "bot", profiles: { bot: [] } }),
+        JSON.stringify({
+            profile: "bot",
+            profiles: { bot: { apiUrl: "http://api.gum.ag/app/v1" } },
+        }),
+        JSON.stringify({
+            profile: "bot",
+            profiles: { bot: { network: "testnet" } },
+        }),
+    ])("malformed config.json fails closed: %s", async (rawConfig) => {
+        const env = tempEnv();
+        const dir = configDirOf(env);
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(join(dir, "config.json"), rawConfig);
+        expect(
+            await runCommand(["auth", "status"], { env, io: memoryIo() })
+        ).toMatchObject({
+            exitCode: 1,
+            output: { error: { code: "invalid_config" } },
+        });
+    });
+
+    test("keyPathOf rejects path traversal and GUM_API_URL rejects plaintext non-loopback hosts", () => {
+        expect(() => keyPathOf("/tmp/gum", "../evil")).toThrow("profile name");
+        expect(() =>
+            resolveSettings(
+                tempEnv({ GUM_API_URL: "http://api.gum.ag/app/v1" })
+            )
+        ).toThrow("https://");
+    });
 });

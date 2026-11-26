@@ -31,9 +31,53 @@ describe("API base URL", () => {
     test("environment and explicit overrides preserve custom paths", () => {
         process.env.GUM_API_URL = "http://localhost:4000/v1///";
         expect(createApi().baseUrl).toBe("http://localhost:4000/v1");
+        expect(createApi("http://127.0.0.1:4000/v1/").baseUrl).toBe(
+            "http://127.0.0.1:4000/v1"
+        );
+        expect(createApi("http://[::1]:4000/v1/").baseUrl).toBe(
+            "http://[::1]:4000/v1"
+        );
         expect(createApi("https://custom.example/prefix/v1/").baseUrl).toBe(
             "https://custom.example/prefix/v1"
         );
+    });
+
+    test("refuses plaintext non-loopback URLs, embedded credentials, and query/fragment base URLs", () => {
+        for (const bad of [
+            "http://api.gum.ag/app/v1",
+            "http://evil.example/v1",
+            "ftp://api.gum.ag/app/v1",
+            "https://user:pass@api.gum.ag/app/v1",
+            "https://api.gum.ag/app/v1?x=1",
+            "https://api.gum.ag/app/v1#frag",
+            "not-a-url",
+        ]) {
+            expect(() => createApi(bad)).toThrow();
+        }
+    });
+
+    test("blocks redirects and path traversal in request paths", async () => {
+        const redirects: (RequestRedirect | undefined)[] = [];
+        const fetchImpl = ((_: URL, init: RequestInit) => {
+            redirects.push(init.redirect);
+            return Promise.resolve(Response.json({ ok: true }));
+        }) as typeof fetch;
+        const api = createApi("https://api.example/app/v1", fetchImpl);
+        await api.get("/chains");
+        expect(redirects).toEqual(["error"]);
+
+        for (const badPath of [
+            "/../admin",
+            "//evil.example/x",
+            "tokens",
+            "/tokens?injected=1",
+            "/tokens#frag",
+            "/tokens\\evil",
+        ]) {
+            await expect(api.get(badPath)).rejects.toMatchObject({
+                code: "invalid_request",
+            });
+        }
     });
 });
 

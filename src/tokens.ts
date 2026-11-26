@@ -1,3 +1,4 @@
+import bs58 from "bs58";
 import { type Api, GumError } from "./api";
 import { routeOf } from "./tree";
 
@@ -21,8 +22,19 @@ const EVM_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 // A Sui coin type, package::module::Type: 0x2::sui::SUI.
 const SUI_COIN_TYPE = /^0x[0-9a-fA-F]{1,64}::\w+::\w+$/;
 
+const isSolanaAddress = (value: string) => {
+    if (!SOLANA_ADDRESS.test(value)) {
+        return false;
+    }
+    try {
+        return bs58.decode(value).length === 32;
+    } catch {
+        return false;
+    }
+};
+
 export const isAddress = (value: string) =>
-    SOLANA_ADDRESS.test(value) ||
+    isSolanaAddress(value) ||
     EVM_ADDRESS.test(value) ||
     SUI_COIN_TYPE.test(value);
 
@@ -37,9 +49,8 @@ const brief = (token: Token) => ({
 /**
  * What "SOL" or "NVDAx" means on GUM. An address passes through: a base58
  * one defaults to Solana and a Sui coin type to Sui; an EVM one needs a
- * chain. A symbol must match one
- * tradable token, or exactly one verified token among several; otherwise the
- * error lists the candidates so the caller can pass a chain or an address.
+ * chain. A symbol must match a single verified token; unverified or ambiguous
+ * matches list the candidates so the caller can pass a chain or an address.
  */
 export const resolveToken = async (
     api: Api,
@@ -51,7 +62,7 @@ export const resolveToken = async (
         if (chainId !== undefined) {
             return { address: value, chainId, symbol: value };
         }
-        if (SOLANA_ADDRESS.test(value)) {
+        if (isSolanaAddress(value)) {
             return { address: value, chainId: SOLANA_CHAIN_ID, symbol: value };
         }
         if (SUI_COIN_TYPE.test(value)) {
@@ -77,23 +88,24 @@ export const resolveToken = async (
             candidate.symbol.toLowerCase() === wanted &&
             (chainId === undefined || candidate.chainId === chainId)
     );
-    // Several chains can list the same symbol: only a lone verified one is
-    // taken without asking, since picking wrong spends real money.
-    const verified = exact.filter((candidate) => candidate.verified);
-    const pick =
-        exact.length === 1
-            ? exact[0]
-            : verified.length === 1
-              ? verified[0]
-              : undefined;
-    if (pick) {
-        return pick;
+    // Only auto-select a lone verified token by symbol, since unverified or
+    // ambiguous tokens can spoof a ticker and spend real money.
+    const verified = exact.filter((candidate) => candidate.verified === true);
+    if (verified.length === 1 && verified[0]) {
+        return verified[0];
     }
     if (exact.length === 0) {
         throw new GumError(
             "token_not_found",
             `No tradable token has the symbol ${value}${chainId === undefined ? "" : ` on chain ${chainId}`}. Pass its address, or look it up with \`gumag tokens search ${value}\`.`,
             { details: { candidates: tokens.slice(0, 5).map(brief) } }
+        );
+    }
+    if (verified.length === 0) {
+        throw new GumError(
+            "unverified_token",
+            `${value} only matched unverified token(s). Pass the token's address explicitly if you intend to trade it.`,
+            { details: { candidates: exact.map(brief) } }
         );
     }
     throw new GumError(
